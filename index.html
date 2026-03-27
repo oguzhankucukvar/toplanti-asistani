@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#003DA5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Toplantı Asistanı</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:      #003DA5;
+  --navy-dark: #002d7a;
+  --navy-pale: #E0E8F7;
+  --red:       #CC0000;
+  --green:     #1A7A45;
+  --green-pale:#E6F4EC;
+  --orange:    #E65C00;
+  --gold:      #d4a017;
+  --bg:        #f4f6fb;
+  --surface:   #ffffff;
+  --ink:       #1a1d2e;
+  --ink2:      #4a5068;
+  --ink3:      #737A94;
+  --border:    #dde2ef;
+  --r:         12px;
+  --sh:        0 2px 12px rgba(0,61,165,0.09);
+  --sh2:       0 6px 24px rgba(0,61,165,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Open Sans',sans-serif;font-size:14px}
+body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:var(--navy);color:#fff;height:54px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.topbar-logo{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;letter-spacing:.3px}
+.topbar-logo em{color:var(--red);font-style:normal}
+.topbar-sub{font-size:11px;font-weight:400;opacity:.7;margin-left:6px}
+.btn-ico{background:rgba(255,255,255,0.13);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:17px;cursor:pointer;min-height:36px}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:99;box-shadow:0 -2px 10px rgba(0,0,0,0.07)}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0;cursor:pointer;color:var(--ink3);font-size:10px;font-weight:600;gap:2px;transition:color .15s}
+.bni .ic{font-size:21px}
+.bni.on{color:var(--navy)}
+
+/* SCREENS */
+.scr{display:none;padding:16px;max-width:600px;margin:0 auto}
+.scr.on{display:block}
+
+/* SETUP */
+.setup-wrap{margin-top:20px}
+.setup-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:28px 22px;text-align:center}
+.setup-card h2{font-family:'Montserrat',sans-serif;font-size:19px;color:var(--navy);margin-bottom:8px}
+.setup-card p{color:var(--ink3);font-size:13px;line-height:1.65;margin-bottom:20px}
+.setup-steps{text-align:left;background:var(--navy-pale);border-radius:10px;padding:12px 16px;margin-bottom:20px}
+.setup-steps li{font-size:12px;color:var(--ink2);line-height:1.9;margin-left:14px}
+.setup-steps a{color:var(--navy);font-weight:700}
+
+/* TİP SEÇİM */
+.tip-grid{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.tip-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:20px 18px;display:flex;align-items:center;gap:16px;cursor:pointer;border:2px solid transparent;transition:all .18s}
+.tip-card:active{transform:scale(.98)}
+.tip-card.sel{border-color:var(--navy);background:var(--navy-pale)}
+.tip-icon{font-size:32px;flex-shrink:0}
+.tip-label{font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px;color:var(--navy)}
+.tip-desc{font-size:12px;color:var(--ink3);margin-top:3px}
+.tip-count{margin-left:auto;background:var(--navy-pale);color:var(--navy);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;flex-shrink:0}
+
+/* FORM */
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Open Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--surface);-webkit-appearance:none;transition:border-color .15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--navy)}
+.fg textarea{resize:vertical;min-height:68px;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 20px;border-radius:9px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;cursor:pointer;border:none;transition:all .15s;min-height:44px;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-dark)}
+.btn-primary:disabled{opacity:.5;cursor:default;transform:none}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);width:auto;padding:9px 16px;font-size:12px;min-height:38px}
+.btn-ghost:hover{border-color:var(--navy);color:var(--navy)}
+.btn-sm{width:auto;padding:8px 16px;font-size:12px;min-height:38px;border-radius:8px}
+
+/* SORU KARTI */
+.q-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:18px 16px;margin-bottom:12px;border-left:4px solid var(--border);transition:border-color .2s}
+.q-card.active{border-left-color:var(--navy)}
+.q-card.done{border-left-color:var(--green)}
+.q-card.ai-q{border-left-color:var(--gold)}
+.q-num{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.q-num .ai-badge{background:var(--gold);color:#fff;border-radius:4px;padding:1px 6px;font-size:10px}
+.q-text{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:10px}
+.q-answer{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Open Sans',sans-serif;font-size:13px;background:var(--bg);resize:none;min-height:60px;transition:border-color .15s;color:var(--ink)}
+.q-answer:focus{outline:none;border-color:var(--navy);background:var(--surface)}
+.q-answer[readonly]{background:var(--bg);color:var(--ink2);border-color:transparent}
+.q-actions{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
+
+/* ANALİZ NOTU */
+.analiz-note{margin-top:8px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.6}
+.analiz-note.risk{background:#fff0f0;border:1px solid #f5c6c6;color:#8b0000}
+.analiz-note.firsat{background:var(--green-pale);border:1px solid #a8d5bc;color:#0f4d2a}
+.analiz-note.bilgi{background:var(--navy-pale);border:1px solid #b8ccee;color:#002d7a}
+.analiz-note.loading{background:var(--bg);border:1px solid var(--border);color:var(--ink3)}
+.analiz-ikon{margin-right:5px}
+
+/* ÖZET */
+.ozet-section{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:18px 16px;margin-bottom:14px}
+.ozet-section h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ozet-text{font-size:13px;color:var(--ink2);line-height:1.7;white-space:pre-wrap}
+.skor-row{display:flex;gap:10px;margin-bottom:14px}
+.skor-box{flex:1;background:var(--navy-pale);border-radius:10px;padding:12px 10px;text-align:center}
+.skor-box .sv{font-family:'Montserrat',sans-serif;font-weight:800;font-size:26px;color:var(--navy)}
+.skor-box .sl{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.skor-box.red{background:#fff0f0}.skor-box.red .sv{color:var(--red)}
+.skor-box.green{background:var(--green-pale)}.skor-box.green .sv{color:var(--green)}
+
+/* PROGRESS */
+.prog-bar{height:4px;background:var(--border);border-radius:99px;margin-bottom:18px;overflow:hidden}
+.prog-fill{height:100%;background:var(--navy);border-radius:99px;transition:width .4s}
+
+/* GEÇMİŞ */
+.hist-item{background:var(--surface);border-radius:10px;box-shadow:var(--sh);padding:14px 16px;margin-bottom:10px;border-left:3px solid var(--navy);cursor:pointer}
+.hist-item:active{opacity:.8}
+.hi-row{display:flex;justify-content:space-between;align-items:flex-start}
+.hi-name{font-weight:700;font-size:14px}
+.hi-date{font-size:11px;color:var(--ink3)}
+.hi-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.tag{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.tag-navy{background:var(--navy-pale);color:var(--navy)}
+.tag-green{background:var(--green-pale);color:var(--green)}
+.tag-orange{background:#FFF3E0;color:var(--orange)}
+.tag-gold{background:#FFF8E1;color:#7d6000}
+.hist-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* EXPORT */
+.exp-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:18px 16px;margin-bottom:14px}
+.exp-card h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:10px}
+.info-box{background:var(--navy-pale);border-radius:10px;padding:14px 16px;margin-top:12px}
+.info-box ol{font-size:12px;color:var(--ink2);line-height:2.1;margin-left:16px}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.on{display:flex}
+.modal{background:var(--surface);border-radius:16px;padding:24px 20px;width:100%;max-width:420px;box-shadow:var(--sh2)}
+.modal h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px;color:var(--navy);margin-bottom:16px}
+
+/* CHIP */
+.ilgi-row{display:flex;gap:7px;flex-wrap:wrap}
+.ilgi-chip{padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface);flex:1;text-align:center;transition:all .12s}
+.ilgi-chip.on{border-color:var(--navy);background:var(--navy-pale);color:var(--navy)}
+.ilgi-chip:active{transform:scale(.95)}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:var(--sh2);transition:transform .28s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* DIVIDER */
+.div{height:1px;background:var(--border);margin:16px 0}
+.sec-title{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+
+/* TYPING */
+.typing{display:inline-flex;gap:4px;align-items:center;padding:4px 0}
+.dot{width:6px;height:6px;background:var(--ink3);border-radius:50%;animation:bounce 1.1s infinite}
+.dot:nth-child(2){animation-delay:.18s}
+.dot:nth-child(3){animation-delay:.36s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .3s ease both}
+
+/* EMPTY */
+.empty{text-align:center;padding:52px 0;color:var(--ink3)}
+.empty-ic{font-size:44px;margin-bottom:10px}
+.empty-t{font-weight:600;font-size:15px;margin-bottom:4px}
+.empty-s{font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <span class="topbar-logo">RE<em>/</em>MAX<span class="topbar-sub">Toplantı Asistanı</span></span>
+  </div>
+  <button class="btn-ico" onclick="openSettings()">⚙️</button>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="bni on" id="bni-yeni" onclick="goNav('yeni')"><span class="ic">➕</span>Yeni</div>
+  <div class="bni" id="bni-gecmis" onclick="goNav('gecmis')"><span class="ic">📋</span>Geçmiş</div>
+  <div class="bni" id="bni-export" onclick="goNav('export')"><span class="ic">📤</span>Export</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: SETUP -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="scr on" id="sc-setup">
+  <div class="setup-wrap">
+    <div class="setup-card fu">
+      <div style="font-size:46px;margin-bottom:10px">🔑</div>
+      <h2>Grok API Anahtarı Gerekli</h2>
+      <p>Yapay zeka asistanı için xAI Grok API anahtarı girmeniz gerekiyor.<br>Bu işlemi yalnızca bir kez yapmanız yeterli.</p>
+      <ol class="setup-steps">
+        <li><a href="https://console.x.ai" target="_blank">console.x.ai</a> adresine gidin</li>
+        <li>X (Twitter) veya Google ile giriş yapın</li>
+        <li>Billing → kredi kartı ekleyin</li>
+        <li>API Keys → Create API Key → <b>chat:write</b> izni seçin</li>
+        <li>Anahtarınız <b>xai-</b> ile başlar</li>
+      </ol>
+      <div class="fg">
+        <label>API Anahtarı</label>
+        <input type="password" id="setup-key" placeholder="xai-xxxxxxxxxxxxxxxx">
+      </div>
+      <button class="btn btn-primary" onclick="saveApiKey()">Kaydet ve Başla →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: YENİ TOPLANTI -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="scr" id="sc-yeni">
+
+  <!-- AŞAMA A: Tip seçimi -->
+  <div id="asama-tip">
+    <div class="sec-title" style="margin-top:4px">Görüşme Tipi Seçin</div>
+    <div class="tip-grid">
+      <div class="tip-card" onclick="secTip('Müteahhit')">
+        <div class="tip-icon">🏗️</div>
+        <div><div class="tip-label">Müteahhit</div><div class="tip-desc">Proje analizi, maliyet, teslim, ruhsat</div></div>
+        <div class="tip-count">8 soru</div>
+      </div>
+      <div class="tip-card" onclick="secTip('Satıcı')">
+        <div class="tip-icon">🏠</div>
+        <div><div class="tip-label">Satıcı</div><div class="tip-desc">Mülk detayı, fiyat, tapu, motivasyon</div></div>
+        <div class="tip-count">8 soru</div>
+      </div>
+      <div class="tip-card" onclick="secTip('Alıcı')">
+        <div class="tip-icon">💼</div>
+        <div><div class="tip-label">Alıcı</div><div class="tip-desc">Bütçe, tercih, finansman, zaman çizelgesi</div></div>
+        <div class="tip-count">8 soru</div>
+      </div>
+    </div>
+    <div class="div"></div>
+    <div class="sec-title">Katılımcı Bilgisi</div>
+    <div class="g2">
+      <div class="fg"><label>Ad Soyad *</label><input type="text" id="t-musteri" placeholder="Müşteri adı"></div>
+      <div class="fg"><label>Şirket / Proje</label><input type="text" id="t-sirket" placeholder="Opsiyonel"></div>
+    </div>
+    <div class="fg">
+      <label>İlgi Seviyesi</label>
+      <div class="ilgi-row">
+        <div class="ilgi-chip on" data-v="🔥 Çok Sıcak" onclick="setIlgi(this)">🔥 Sıcak</div>
+        <div class="ilgi-chip" data-v="✅ İlgili" onclick="setIlgi(this)">✅ İlgili</div>
+        <div class="ilgi-chip" data-v="🤔 Kararsız" onclick="setIlgi(this)">🤔 Kararsız</div>
+        <div class="ilgi-chip" data-v="❄️ Soğuk" onclick="setIlgi(this)">❄️ Soğuk</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AŞAMA B: Soru-Cevap -->
+  <div id="asama-soru" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <span id="tip-badge" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:var(--navy)"></span>
+        <span id="musteri-badge" style="font-size:12px;color:var(--ink3);margin-left:6px"></span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="bitisToplanti()" style="color:var(--red);border-color:var(--red)">🏁 Bitir</button>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div id="soru-listesi"></div>
+    <div id="ai-soru-bolum" style="display:none">
+      <div class="div"></div>
+      <div class="sec-title" style="color:var(--gold)">🤖 Yapay Zeka Soruları</div>
+      <div id="ai-soru-listesi"></div>
+    </div>
+    <div id="ai-soru-yukleniyor" style="display:none;text-align:center;padding:16px 0;color:var(--ink3);font-size:13px">
+      <div class="typing" style="justify-content:center"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div style="margin-top:6px">Yapay zeka yeni sorular üretiyor…</div>
+    </div>
+  </div>
+
+  <!-- AŞAMA C: Özet -->
+  <div id="asama-ozet" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px">Toplantı Özeti</span>
+      <span id="ozet-tip-badge" class="tag tag-navy"></span>
+    </div>
+
+    <div class="skor-row" id="skor-row"></div>
+
+    <div class="ozet-section">
+      <h3>📋 Genel Özet</h3>
+      <div class="ozet-text" id="oz-genel">Yükleniyor…</div>
+    </div>
+    <div class="ozet-section">
+      <h3>⚠️ Riskler</h3>
+      <div class="ozet-text" id="oz-risk">—</div>
+    </div>
+    <div class="ozet-section">
+      <h3>✦ Fırsatlar</h3>
+      <div class="ozet-text" id="oz-firsat">—</div>
+    </div>
+    <div class="ozet-section">
+      <h3>→ Önerilen Sonraki Adımlar</h3>
+      <div class="ozet-text" id="oz-adim">—</div>
+    </div>
+
+    <div class="ozet-section">
+      <h3>📝 Görüşme Notu <span style="font-size:11px;font-weight:400;color:var(--ink3)">(düzenleyebilirsiniz)</span></h3>
+      <textarea id="f-not" rows="7" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Open Sans',sans-serif;font-size:13px;line-height:1.6;resize:vertical"></textarea>
+    </div>
+
+    <div class="g2" style="gap:10px;margin-bottom:12px">
+      <div class="fg"><label>Sonraki Adım</label><input type="text" id="f-adim" placeholder="örn: Tapu kontrolü"></div>
+      <div class="fg"><label>Hatırlatıcı</label><input type="datetime-local" id="f-hat"></div>
+    </div>
+
+    <button class="btn btn-green" onclick="kaydet()">💾 Kaydet</button>
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="goNav('yeni')">← Yeni Toplantı</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: GEÇMİŞ -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="scr" id="sc-gecmis">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px">Geçmiş</span>
+    <span class="tag tag-navy" id="gc-count"></span>
+  </div>
+  <div id="gc-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: EXPORT -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="scr" id="sc-export">
+  <div class="exp-card">
+    <h3>📤 CRM'e Aktar</h3>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.7">Kaydedilen görüşmeleri <b>saha_crm_*.json</b> formatında indirin.<br>CRM → Görüşmeler sekmesi → <b>JSON Yükle</b> ile aktarın.</p>
+    <div id="exp-stats" style="margin:14px 0"></div>
+    <button class="btn btn-primary" onclick="exportJSON()">⬇️ JSON İndir</button>
+    <div class="div"></div>
+    <button class="btn" style="background:#fff0f0;color:var(--red);border:1.5px solid #f5c6c6" onclick="clearAll()">🗑️ Tüm Verileri Sil</button>
+    <div class="info-box" style="margin-top:14px">
+      <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:var(--navy);margin-bottom:6px">Nasıl çalışır?</div>
+      <ol>
+        <li>Bu uygulamada görüşmeleri kaydedin</li>
+        <li>"JSON İndir" ile dosyayı indirin</li>
+        <li>WhatsApp / Drive ile PC'ye gönderin</li>
+        <li>CRM → Görüşmeler → "JSON Yükle" butonuna tıklayın</li>
+        <li>Görüşmeler otomatik eklenir</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h3>⚙️ Ayarlar</h3>
+    <div class="fg"><label>Grok API Anahtarı</label><input type="password" id="s-key" placeholder="xai-xxxxxxxxxxxxxxxx"></div>
+    <div class="fg"><label>Danışman Adı</label><input type="text" id="s-name" placeholder="Ad Soyad"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="closeSettings()">İptal</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveSettings()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+// ── KALIP SORULAR ─────────────────────────────────────────────
+const SORULAR = {
+  'Müteahhit': [
+    'Proje adı ve konumu nedir?',
+    'Proje türü nedir? (konut / ticari / karma)',
+    'Toplam birim sayısı veya alan (m²) kaçtır?',
+    'Tahmini toplam maliyet ve birim başı maliyet nedir?',
+    'Mevcut proje aşaması ve teslim tarihi nedir?',
+    'Tüm ruhsat ve izinler alındı mı?',
+    'Alıcılara sunulan ödeme planı veya finansman seçenekleri nelerdir?',
+    'Mevcut satış oranı ve kalan envanter nedir?'
+  ],
+  'Satıcı': [
+    'Tam adres ve mülk türü nedir?',
+    'İstenen fiyat nedir ve pazarlık payı var mı?',
+    'Satış nedeniniz nedir?',
+    'Tapu temiz ve takyidatsız mı?',
+    'Mevcut kullanım durumu nedir? (boş / kiracılı)',
+    'Son tadilat ne zaman ve ne kapsamda yapıldı?',
+    'Birikmiş vergi, ipotek veya haciz var mı?',
+    'İdeal kapanış süreci ve zaman çizelgesi nedir?'
+  ],
+  'Alıcı': [
+    'Hedef mülk türü ve tercih ettiğiniz bölgeler nelerdir?',
+    'Maksimum bütçeniz nedir?',
+    'Bu alım yatırım amaçlı mı, oturum amaçlı mı, yoksa yeniden satış için mi?',
+    'Hangi finansman yöntemini kullanmayı planlıyorsunuz? (nakit / mortgage / diğer)',
+    'Hedef satın alma zaman çizelgeniz nedir?',
+    'Olmazsa olmaz özellikleriniz veya vazgeçilmez kriterleriniz nelerdir?',
+    'Banka tarafından ön onay veya finansal değerlendirme yapıldı mı?',
+    'Daha önce mülk gezdiniz mi? Neyi beğendiniz / beğenmediniz?'
+  ]
+};
+
+// ── SİSTEM PROMPTU ────────────────────────────────────────────
+const SYS = `Sen Türkiye'de Anadolu Yakası'nda faaliyet gösteren, RE/MAX bünyesinde çalışan kıdemli bir gayrimenkul yatırım danışmanısın. 15 yılı aşkın sektör deneyimine sahipsin.
+
+GÖREV: Danışmanın sahada yaptığı görüşmelerde anlık analiz ve soru desteği sağlamak.
+
+UZMANLIK:
+- Konut, ticari mülk, arsa değerleme
+- Müteahhit proje analizi (ödeme planı, teslim riski, ruhsat)
+- Alıcı-satıcı psikolojisi ve müzakere taktikleri
+- Anadolu Yakası ilçe bazlı fiyat trendleri (Kadıköy, Maltepe, Kartal, Pendik, Ümraniye)
+- Yatırım getirisi hesaplama (kira çarpanı, ROI)
+- Tapu, ipotek, imar ve hukuki süreçler
+
+KARAKTER:
+- Net, pratik ve saha odaklı konuş
+- Riskleri açıkça söyle, şeker söyleme
+- Gerektiğinde müzakere taktikleri öner
+- Rakam konuşulduğunda rakamla cevap ver
+- Türkçe yaz, kısa ve odaklı ol`;
+
+// ── DURUM ─────────────────────────────────────────────────────
+let DB = JSON.parse(localStorage.getItem('ta_db') || '[]');
+let apiKey = localStorage.getItem('ta_apikey') || '';
+let danismanAdi = localStorage.getItem('ta_danisman') || '';
+
+// Aktif toplantı durumu
+let A = resetAktif();
+
+function resetAktif() {
+  return {
+    tip: null,
+    musteri: '',
+    sirket: '',
+    ilgi: '🔥 Çok Sıcak',
+    tarih: new Date().toISOString(),
+    cevaplar: [],      // [{soru, cevap, analiz, aiUretildi}]
+    aiSorular: [],     // Grok'un ürettiği sorular
+    aiCevaplar: [],
+    ozetData: null
+  };
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (!apiKey) { showScr('sc-setup'); hideNav(); }
+  else { showScr('sc-yeni'); showNav(); }
+  renderGecmis();
+  renderExpStats();
+});
+
+// ── NAV ───────────────────────────────────────────────────────
+function goNav(name) {
+  document.querySelectorAll('.bni').forEach(b => b.classList.remove('on'));
+  document.getElementById('bni-' + name)?.classList.add('on');
+  if (name === 'yeni')    { showScr('sc-yeni'); resetYeni(); }
+  if (name === 'gecmis')  { showScr('sc-gecmis'); renderGecmis(); }
+  if (name === 'export')  { showScr('sc-export'); renderExpStats(); }
+}
+function showScr(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function hideNav() { document.querySelector('.bnav').style.display = 'none'; }
+function showNav() { document.querySelector('.bnav').style.display = 'flex'; }
+
+// ── API KEY ───────────────────────────────────────────────────
+function saveApiKey() {
+  const k = document.getElementById('setup-key').value.trim();
+  if (!k.startsWith('xai-')) { toast('❌ Geçersiz anahtar — "xai-" ile başlamalı'); return; }
+  apiKey = k; localStorage.setItem('ta_apikey', k);
+  showNav(); showScr('sc-yeni'); goNav('yeni');
+  toast('✅ API anahtarı kaydedildi!');
+}
+function openSettings() {
+  document.getElementById('s-key').value = apiKey;
+  document.getElementById('s-name').value = danismanAdi;
+  document.getElementById('settingsModal').classList.add('on');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('on'); }
+function saveSettings() {
+  const k = document.getElementById('s-key').value.trim();
+  const n = document.getElementById('s-name').value.trim();
+  if (k && !k.startsWith('xai-')) { toast('❌ Geçersiz anahtar'); return; }
+  if (k) { apiKey = k; localStorage.setItem('ta_apikey', k); }
+  danismanAdi = n; localStorage.setItem('ta_danisman', n);
+  closeSettings(); toast('✅ Kaydedildi');
+}
+
+// ── YENİ TOPLANTI ─────────────────────────────────────────────
+function resetYeni() {
+  A = resetAktif();
+  showAsama('tip');
+  document.getElementById('t-musteri').value = '';
+  document.getElementById('t-sirket').value = '';
+  document.querySelectorAll('.ilgi-chip').forEach((c, i) => c.classList.toggle('on', i === 0));
+  A.ilgi = '🔥 Çok Sıcak';
+  document.querySelectorAll('.tip-card').forEach(c => c.classList.remove('sel'));
+}
+function showAsama(name) {
+  ['tip','soru','ozet'].forEach(n => {
+    document.getElementById('asama-' + n).style.display = n === name ? 'block' : 'none';
+  });
+  window.scrollTo(0, 0);
+}
+
+function setIlgi(el) {
+  document.querySelectorAll('.ilgi-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  A.ilgi = el.dataset.v;
+  if (navigator.vibrate) navigator.vibrate(8);
+}
+
+function secTip(tip) {
+  const musteri = document.getElementById('t-musteri').value.trim();
+  if (!musteri) { toast('❌ Önce müşteri adını girin'); document.getElementById('t-musteri').focus(); return; }
+  A.tip = tip;
+  A.musteri = musteri;
+  A.sirket = document.getElementById('t-sirket').value.trim();
+  A.tarih = new Date().toISOString();
+  A.cevaplar = SORULAR[tip].map(s => ({ soru: s, cevap: '', analiz: null, aiUretildi: false }));
+  A.aiSorular = [];
+  A.aiCevaplar = [];
+
+  document.querySelectorAll('.tip-card').forEach(c => c.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+
+  document.getElementById('tip-badge').textContent = tip;
+  document.getElementById('musteri-badge').textContent = '— ' + musteri;
+
+  renderSoruListesi();
+  showAsama('soru');
+  updateProg();
+}
+
+// ── SORU LİSTESİ ─────────────────────────────────────────────
+function renderSoruListesi() {
+  const el = document.getElementById('soru-listesi');
+  el.innerHTML = A.cevaplar.map((item, i) => soruKarti(i, false)).join('');
+}
+
+function soruKarti(i, aiUretildi, aiIdx) {
+  const isAI = aiUretildi;
+  const item = isAI ? { soru: A.aiSorular[aiIdx], cevap: A.aiCevaplar[aiIdx] || '', analiz: null } : A.cevaplar[i];
+  const idPref = isAI ? `ai${aiIdx}` : `q${i}`;
+  const done = isAI ? (A.aiCevaplar[aiIdx]?.trim().length > 0) : (item.cevap.trim().length > 0);
+  const cardClass = `q-card${done ? ' done' : (i === aktifSoruIdx() ? ' active' : '')}${isAI ? ' ai-q' : ''}`;
+
+  return `<div class="${cardClass}" id="kart-${idPref}">
+    <div class="q-num">
+      ${isAI ? `<span class="ai-badge">AI</span> Soru ${aiIdx + 1}` : `Soru ${i + 1} / ${A.cevaplar.length}`}
+    </div>
+    <div class="q-text">${item.soru}</div>
+    <div class="q-actions">
+      <textarea class="q-answer" id="ans-${idPref}" placeholder="Cevabı girin…" rows="2"
+        ${done && !isAI ? 'readonly' : ''}
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();cevapGonder('${idPref}',${i},${isAI},${isAI ? aiIdx : 'null'})}"
+      >${isAI ? (A.aiCevaplar[aiIdx] || '') : item.cevap}</textarea>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:8px">
+      ${!done ? `<button class="btn btn-primary btn-sm" onclick="cevapGonder('${idPref}',${i},${isAI},${isAI ? aiIdx : 'null'})">Kaydet →</button>` : ''}
+      ${done && !isAI ? `<button class="btn btn-ghost btn-sm" onclick="cevapDuzenle(${i})">Düzenle</button>` : ''}
+    </div>
+    <div id="analiz-${idPref}">
+      ${item.analiz ? analizHTML(item.analiz) : ''}
+    </div>
+  </div>`;
+}
+
+function aktifSoruIdx() {
+  const idx = A.cevaplar.findIndex(c => !c.cevap.trim());
+  return idx === -1 ? A.cevaplar.length - 1 : idx;
+}
+
+function updateProg() {
+  const toplam = A.cevaplar.length + A.aiSorular.length;
+  const dolu = A.cevaplar.filter(c => c.cevap.trim()).length + A.aiCevaplar.filter(c => c?.trim()).length;
+  const pct = toplam > 0 ? Math.round((dolu / toplam) * 100) : 0;
+  document.getElementById('prog').style.width = pct + '%';
+}
+
+// ── CEVAP GÖNDER + ANALİZ ────────────────────────────────────
+async function cevapGonder(idPref, qIdx, isAI, aiIdx) {
+  const ta = document.getElementById('ans-' + idPref);
+  const cevap = ta?.value.trim();
+  if (!cevap) { toast('⚠️ Cevap boş olamaz'); return; }
+
+  if (isAI) {
+    // AI sorusu cevabı
+    while (A.aiCevaplar.length <= aiIdx) A.aiCevaplar.push('');
+    A.aiCevaplar[aiIdx] = cevap;
+    ta.readOnly = true;
+    const kartEl = document.getElementById('kart-' + idPref);
+    if (kartEl) kartEl.className = kartEl.className.replace('ai-q', 'ai-q done');
+  } else {
+    A.cevaplar[qIdx].cevap = cevap;
+    ta.readOnly = true;
+  }
+
+  updateProg();
+
+  // Analiz göster (yükleniyor)
+  const analizEl = document.getElementById('analiz-' + idPref);
+  if (analizEl) analizEl.innerHTML = analizHTML({ tip: 'loading', metin: '' });
+
+  // Grok analizi
+  const analiz = await grokAnalizEt(
+    isAI ? A.aiSorular[aiIdx] : A.cevaplar[qIdx].soru,
+    cevap,
+    A.tip
+  );
+
+  if (!isAI) A.cevaplar[qIdx].analiz = analiz;
+  if (analizEl) analizEl.innerHTML = analizHTML(analiz);
+
+  // Butonları güncelle
+  const kartEl = document.getElementById('kart-' + idPref);
+  if (kartEl) {
+    const actDiv = kartEl.querySelector('.q-actions + div');
+    if (actDiv) actDiv.innerHTML = !isAI
+      ? `<button class="btn btn-ghost btn-sm" onclick="cevapDuzenle(${qIdx})">Düzenle</button>`
+      : '';
+    if (!isAI) kartEl.classList.add('done');
+  }
+
+  // Tüm kalıp sorular bitti mi? → AI soruları üret
+  const hepsiBitti = A.cevaplar.every(c => c.cevap.trim());
+  if (!isAI && hepsiBitti && A.aiSorular.length === 0) {
+    await uretAiSorular();
+  }
+
+  // Sonraki soruya scroll
+  setTimeout(() => {
+    const sonraki = document.querySelector('.q-card:not(.done):not(.ai-q)') ||
+                    document.querySelector('.ai-q:not(.done)');
+    if (sonraki) sonraki.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
+}
+
+function cevapDuzenle(i) {
+  A.cevaplar[i].cevap = '';
+  A.cevaplar[i].analiz = null;
+  const idPref = `q${i}`;
+  const kartEl = document.getElementById('kart-' + idPref);
+  if (kartEl) {
+    kartEl.classList.remove('done');
+    const ta = kartEl.querySelector('textarea');
+    if (ta) { ta.readOnly = false; ta.value = ''; ta.focus(); }
+    const analizEl = document.getElementById('analiz-' + idPref);
+    if (analizEl) analizEl.innerHTML = '';
+    const actDiv = kartEl.querySelector('.q-actions + div');
+    if (actDiv) actDiv.innerHTML = `<button class="btn btn-primary btn-sm" onclick="cevapGonder('${idPref}',${i},false,null)">Kaydet →</button>`;
+  }
+  updateProg();
+}
+
+// ── GROK ANALİZ ──────────────────────────────────────────────
+async function grokAnalizEt(soru, cevap, tip) {
+  try {
+    const prompt = `Gayrimenkul görüşmesi analizi (${tip}):
+Soru: ${soru}
+Cevap: ${cevap}
+
+Bu cevabı analiz et. Şu JSON formatında döndür:
+{"tip":"risk"|"firsat"|"bilgi"|"ok","metin":"kısa analiz notu (max 2 cümle)"}
+
+- "risk": Dikkat edilmesi gereken bir sorun veya belirsizlik varsa
+- "firsat": Değerlendirilmesi gereken pozitif bir durum varsa
+- "bilgi": Nötr ama önemli bir tespit varsa
+- "ok": Cevap yeterli ve sorun yoksa (metin boş olabilir)
+
+Sadece JSON döndür, başka hiçbir şey yazma.`;
+
+    const res = await callGrok(prompt, 150);
+    const parsed = JSON.parse(res.replace(/```json|```/g, '').trim());
+    return parsed;
+  } catch (e) {
+    return { tip: 'ok', metin: '' };
+  }
+}
+
+// ── AI SORU ÜRET ─────────────────────────────────────────────
+async function uretAiSorular() {
+  document.getElementById('ai-soru-yukleniyor').style.display = 'block';
+
+  const qaPairs = A.cevaplar.map((c, i) =>
+    `S${i+1}: ${c.soru}\nC: ${c.cevap}`
+  ).join('\n\n');
+
+  const prompt = `Sen kıdemli bir gayrimenkul yatırım danışmanısın.
+Aşağıdaki ${A.tip} görüşmesi soru-cevaplarını analiz et.
+3 ile 7 arasında yüksek değerli takip sorusu üret.
+
+Kriterlerin:
+- Sadece kritik bilgi eksiklerini kapatacak sorular sor
+- Risk ve finansal belirsizliklere odaklan
+- Genel veya tekrar eden sorulardan kaçın
+- Türkçe yaz
+
+Cevaplar:
+${qaPairs}
+
+Sadece JSON array döndür: ["soru1","soru2","soru3"]
+Başka hiçbir şey yazma.`;
+
+  try {
+    const res = await callGrok(prompt, 400);
+    const parsed = JSON.parse(res.replace(/```json|```/g, '').trim());
+    if (Array.isArray(parsed) && parsed.length) {
+      A.aiSorular = parsed;
+      A.aiCevaplar = new Array(parsed.length).fill('');
+      renderAiSorular();
+    }
+  } catch (e) {
+    A.aiSorular = [
+      'Bu anlaşmadaki en büyük riski nasıl değerlendiriyorsunuz?',
+      'Zaman çizelgesinde esneklik var mı?',
+      'Fiyatlandırma kararı nasıl oluştu?'
+    ];
+    A.aiCevaplar = ['', '', ''];
+    renderAiSorular();
+  }
+
+  document.getElementById('ai-soru-yukleniyor').style.display = 'none';
+  updateProg();
+}
+
+function renderAiSorular() {
+  const el = document.getElementById('ai-soru-listesi');
+  el.innerHTML = A.aiSorular.map((s, i) => soruKarti(i, true, i)).join('');
+  document.getElementById('ai-soru-bolum').style.display = 'block';
+  document.getElementById('ai-soru-bolum').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── GROK API ÇAĞRISI ─────────────────────────────────────────
+async function callGrok(userMsg, maxTokens = 600) {
+  const res = await fetch('https://api.x.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+    body: JSON.stringify({
+      model: 'grok-3-latest',
+      messages: [
+        { role: 'system', content: SYS },
+        { role: 'user', content: userMsg }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0.4
+    })
+  });
+  if (!res.ok) throw new Error('API ' + res.status);
+  const d = await res.json();
+  return d.choices?.[0]?.message?.content || '';
+}
+
+// ── TOPLANTI BİTİŞ ───────────────────────────────────────────
+async function bitisToplanti() {
+  const cevaplananlar = A.cevaplar.filter(c => c.cevap.trim()).length;
+  if (cevaplananlar === 0) { toast('⚠️ En az bir soruyu cevaplayın'); return; }
+  if (!apiKey) { toast('❌ Grok API anahtarı girilmemiş. Ayarlar\'dan ekleyin.'); return; }
+
+  showAsama('ozet');
+  document.getElementById('ozet-tip-badge').textContent = A.tip + ' — ' + A.musteri;
+
+  // Yükleniyor durumu — tüm alanlar
+  document.getElementById('skor-row').innerHTML = `
+    <div class="skor-box"><div class="sv" style="font-size:18px">⏳</div><div class="sl">Uygunluk</div></div>
+    <div class="skor-box red"><div class="sv" style="font-size:18px">⏳</div><div class="sl">Risk</div></div>
+    <div class="skor-box green"><div class="sv" style="font-size:18px">⏳</div><div class="sl">Fırsat</div></div>`;
+
+  const yukleniyor = `<div style="display:flex;align-items:center;gap:8px;color:var(--ink3);font-size:13px">
+    <div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <span>Yapay zeka analiz yapıyor…</span></div>`;
+  document.getElementById('oz-genel').innerHTML = yukleniyor;
+  document.getElementById('oz-risk').innerHTML = yukleniyor;
+  document.getElementById('oz-firsat').innerHTML = yukleniyor;
+  document.getElementById('oz-adim').innerHTML = yukleniyor;
+  document.getElementById('f-not').value = '';
+  document.getElementById('f-not').placeholder = 'Yapay zeka notu oluşturuyor…';
+
+  await ozetUret();
+}
+
+async function ozetUret() {
+  const qaPairs = [
+    ...A.cevaplar.map((c, i) => `[Kalıp S${i+1}] ${c.soru}\nCevap: ${c.cevap || '(yanıtsız)'}`),
+    ...A.aiSorular.map((s, i) => `[AI S${i+1}] ${s}\nCevap: ${A.aiCevaplar[i] || '(yanıtsız)'}`)
+  ].join('\n\n');
+
+  const analizler = A.cevaplar
+    .filter(c => c.analiz && c.analiz.metin)
+    .map(c => `• ${c.analiz.metin}`)
+    .join('\n');
+
+  const prompt = `Gayrimenkul görüşmesi analizi (${A.tip} — ${A.musteri}${A.sirket ? ', ' + A.sirket : ''}).
+
+SORU-CEVAPLAR:
+${qaPairs}
+
+ANLИК ANALİZ NOTLARI:
+${analizler || '(yok)'}
+
+Şu JSON formatında kapsamlı bir analiz yaz:
+{
+  "uygunluk": <0-100 tam sayı>,
+  "risk_skoru": <0-100 tam sayı>,
+  "firsat_skoru": <0-100 tam sayı>,
+  "guven": "Düşük" | "Orta" | "Yüksek",
+  "ozet": "3-4 cümle genel özet",
+  "riskler": ["risk1","risk2","risk3"],
+  "firsatlar": ["firsat1","firsat2"],
+  "sonraki_adimlar": ["adim1","adim2","adim3"],
+  "crm_not": "CRM not alanına yazılacak tam metin — soru cevapları, analizler ve önerilen adımları içeren yapılandırılmış özet (5-10 satır)"
+}
+
+Sadece JSON döndür.`;
+
+  try {
+    const res = await callGrok(prompt, 1000);
+    const clean = res.replace(/```json|```/g, '').trim();
+    const data = JSON.parse(clean);
+    A.ozetData = data;
+    renderOzet(data);
+  } catch (e) {
+    // API erişilemedi veya JSON parse hatası — fallback: manuel içerik göster
+    const hataMsg = e.message || 'Bağlantı hatası';
+    const cevaplananSorular = A.cevaplar
+      .filter(c => c.cevap.trim())
+      .map((c, i) => `S${i+1}: ${c.soru}\nC: ${c.cevap}`)
+      .join('\n\n');
+    const aiCevaplananlar = A.aiSorular
+      .map((s, i) => A.aiCevaplar[i]?.trim() ? `AI S${i+1}: ${s}\nC: ${A.aiCevaplar[i]}` : '')
+      .filter(Boolean).join('\n\n');
+
+    // Skorlar — API olmadan varsayılan
+    document.getElementById('skor-row').innerHTML = `
+      <div class="skor-box"><div class="sv" style="font-size:14px;color:var(--ink3)">—</div><div class="sl">Uygunluk</div></div>
+      <div class="skor-box red"><div class="sv" style="font-size:14px;color:var(--ink3)">—</div><div class="sl">Risk</div></div>
+      <div class="skor-box green"><div class="sv" style="font-size:14px;color:var(--ink3)">—</div><div class="sl">Fırsat</div></div>`;
+
+    document.getElementById('oz-genel').innerHTML =
+      `<div style="color:var(--red);font-size:12px;margin-bottom:8px">⚠️ Yapay zeka bağlantısı kurulamadı: ${hataMsg}<br>Not alanı soru-cevaplardan otomatik dolduruldu. Analiz için geçerli Grok API anahtarı gereklidir.</div>`;
+    document.getElementById('oz-risk').textContent = '—';
+    document.getElementById('oz-firsat').textContent = '—';
+    document.getElementById('oz-adim').textContent = '—';
+
+    // Not alanını soru-cevaplardan doldur
+    const tarih = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const fallbackNot = `GÖRÜŞME NOTU — ${A.tip} / ${A.musteri}${A.sirket ? ' (' + A.sirket + ')' : ''}
+Tarih: ${tarih}
+İlgi: ${A.ilgi}
+
+── SORU-CEVAPLAR ──
+${cevaplananSorular}${aiCevaplananlar ? '\n\n── AI SORULARI ──\n' + aiCevaplananlar : ''}
+
+[Analiz: Grok API bağlantısı kurulamadı — manuel analiz ekleyin]`;
+    document.getElementById('f-not').value = fallbackNot;
+    document.getElementById('f-not').placeholder = 'Not ekleyin…';
+  }
+}
+
+function renderOzet(d) {
+  document.getElementById('skor-row').innerHTML = `
+    <div class="skor-box"><div class="sv">${d.uygunluk ?? '—'}</div><div class="sl">Uygunluk</div></div>
+    <div class="skor-box red"><div class="sv">${d.risk_skoru ?? '—'}</div><div class="sl">Risk</div></div>
+    <div class="skor-box green"><div class="sv">${d.firsat_skoru ?? '—'}</div><div class="sl">Fırsat</div></div>`;
+
+  document.getElementById('oz-genel').textContent = d.ozet || '—';
+  document.getElementById('oz-risk').textContent   = (d.riskler || []).map((r,i) => `${i+1}. ${r}`).join('\n') || '—';
+  document.getElementById('oz-firsat').textContent = (d.firsatlar || []).map((r,i) => `${i+1}. ${r}`).join('\n') || '—';
+  document.getElementById('oz-adim').textContent   = (d.sonraki_adimlar || []).map((r,i) => `${i+1}. ${r}`).join('\n') || '—';
+
+  document.getElementById('f-not').value = d.crm_not || '';
+  document.getElementById('f-not').placeholder = 'Not ekleyin…';
+}
+
+// ── KAYDET ───────────────────────────────────────────────────
+function kaydet() {
+  const musteri = A.musteri;
+  if (!musteri) { toast('❌ Müşteri adı eksik!'); return; }
+
+  const d = A.ozetData || {};
+  const not = document.getElementById('f-not').value.trim();
+  const adim = document.getElementById('f-adim').value.trim();
+  const hat = document.getElementById('f-hat').value;
+
+  const kayit = {
+    _id:       'ta_' + Date.now(),
+    _zaman:    new Date().toISOString(),
+    tip_veri:  'gorusme',
+    musteri:   musteri,
+    musteriId: null,
+    tarih:     A.tarih,
+    tip:       A.tip === 'Müteahhit' ? 'Yüz Yüze' : 'Yüz Yüze',
+    ilgi:      A.ilgi,
+    mulk:      A.sirket || '',
+    not:       not,
+    adim:      adim,
+    hat:       hat,
+    // Ekstra meta
+    _tip_kisi: A.tip,
+    _sirket:   A.sirket,
+    _uygunluk: d.uygunluk,
+    _risk:     d.risk_skoru,
+    _firsat:   d.firsat_skoru,
+    _guven:    d.guven,
+    _soru_sayisi: A.cevaplar.length + A.aiSorular.length
+  };
+
+  DB.push(kayit);
+  localStorage.setItem('ta_db', JSON.stringify(DB));
+  toast('✅ Görüşme kaydedildi!');
+  if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+
+  setTimeout(() => { goNav('gecmis'); }, 600);
+}
+
+// ── ANALİZ HTML ──────────────────────────────────────────────
+function analizHTML(a) {
+  if (!a) return '';
+  if (a.tip === 'loading') return `<div class="analiz-note loading"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  if (a.tip === 'ok' || !a.metin) return '';
+  const ikon = { risk: '⚠️', firsat: '✦', bilgi: 'ℹ️' };
+  return `<div class="analiz-note ${a.tip}"><span class="analiz-ikon">${ikon[a.tip] || ''}</span>${a.metin}</div>`;
+}
+
+// ── GEÇMİŞ ───────────────────────────────────────────────────
+function renderGecmis() {
+  const el = document.getElementById('gc-list');
+  const cnt = document.getElementById('gc-count');
+  const sorted = [...DB].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+  cnt.textContent = sorted.length + ' kayıt';
+
+  if (!sorted.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ic">📋</div><div class="empty-t">Henüz görüşme yok</div><div class="empty-s">Yeni toplantı başlatın</div></div>`;
+    return;
+  }
+
+  el.innerHTML = sorted.map((g, i) => {
+    const tarih = new Date(g.tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+    const ilgiCls = g.ilgi?.includes('Sıcak') ? 'tag-orange' : g.ilgi?.includes('İlgili') ? 'tag-green' : 'tag-navy';
+    const uygunluk = g._uygunluk != null ? `<span class="tag tag-navy">📊 ${g._uygunluk}</span>` : '';
+    const guven = g._guven ? `<span class="tag ${g._guven==='Yüksek'?'tag-green':g._guven==='Orta'?'tag-gold':'tag-navy'}">${g._guven}</span>` : '';
+    return `<div class="hist-item" onclick="toggleHist(${i})">
+      <div class="hi-row">
+        <div class="hi-name">${g.musteri}</div>
+        <div class="hi-date">${tarih}</div>
+      </div>
+      <div class="hi-tags">
+        <span class="tag tag-navy">${g._tip_kisi || g.tip}</span>
+        ${g.ilgi ? `<span class="tag ${ilgiCls}">${g.ilgi}</span>` : ''}
+        ${uygunluk}${guven}
+      </div>
+      <div class="hist-detail" id="hd-${i}">
+        ${g.not ? `<div style="font-size:12px;color:var(--ink2);line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:10px;margin-bottom:8px">${g.not}</div>` : ''}
+        ${g.adim ? `<div style="font-size:12px;color:var(--navy);font-weight:600;margin-bottom:8px">→ ${g.adim}</div>` : ''}
+        <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#f5c6c6" onclick="event.stopPropagation();silKayit('${g._id}')">🗑️ Sil</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHist(i) {
+  const el = document.getElementById('hd-' + i);
+  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function silKayit(id) {
+  DB = DB.filter(g => g._id !== id);
+  localStorage.setItem('ta_db', JSON.stringify(DB));
+  renderGecmis(); renderExpStats();
+  toast('🗑️ Silindi');
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function renderExpStats() {
+  const el = document.getElementById('exp-stats');
+  if (!el) return;
+  el.innerHTML = `<div style="display:flex;gap:10px">
+    <div class="skor-box" style="flex:1"><div class="sv" style="font-size:22px">${DB.length}</div><div class="sl">Bekleyen</div></div>
+    <div class="skor-box green" style="flex:1"><div class="sv" style="font-size:14px">${new Date().toLocaleDateString('tr-TR')}</div><div class="sl">Bugün</div></div>
+  </div>`;
+}
+
+function exportJSON() {
+  if (!DB.length) { toast('⚠️ Dışa aktarılacak kayıt yok'); return; }
+  const payload = {
+    _meta: { kaynak: 'Toplantı Asistanı', versiyon: '2.0', tarih: new Date().toISOString(), toplam: DB.length },
+    gorusmeler: DB.map(g => ({
+      _id: g._id, _zaman: g._zaman, tip_veri: 'gorusme',
+      musteri: g.musteri, musteriId: null,
+      tarih: g.tarih, tip: g.tip, ilgi: g.ilgi,
+      mulk: g.mulk || '', not: g.not || '',
+      adim: g.adim || '', hat: g.hat || ''
+    }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `saha_crm_gorusme_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  toast(`✅ ${DB.length} görüşme export edildi`);
+}
+
+function clearAll() {
+  if (!confirm('Tüm kayıtlar silinecek. Emin misiniz?')) return;
+  DB = []; localStorage.setItem('ta_db', JSON.stringify(DB));
+  renderGecmis(); renderExpStats();
+  toast('🗑️ Tüm veriler silindi');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 2800);
+}
+
+// Android geri tuşu
+window.addEventListener('popstate', () => {
+  const asamaSoru = document.getElementById('asama-soru');
+  if (asamaSoru.style.display !== 'none') { showAsama('tip'); history.pushState(null, ''); }
+});
+history.pushState(null, '');
+</script>
+</body>
+</html>
