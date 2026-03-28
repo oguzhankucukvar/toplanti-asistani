@@ -883,19 +883,34 @@ function toggleHist(i){
   if(el) el.style.display=el.style.display==='block'?'none':'block';
 }
 
-// Silme — data attribute ile id alır, tırnak sorunu olmaz
+// Silme — önce onay barı göster
 function silKayitBtn(btn) {
   const kid = btn.getAttribute('data-kid');
   if (!kid) { toast('❌ Kayıt ID bulunamadı'); return; }
-  if (!confirm('Bu görüşme silinecek. Emin misiniz?')) return;
+
+  // Daha önce açık onay varsa kapat
+  document.querySelectorAll('.sil-onay').forEach(el => el.remove());
+
+  // Butonun yanına onay satırı ekle
+  const onay = document.createElement('div');
+  onay.className = 'sil-onay';
+  onay.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:#fff0f0;border:1px solid #f5c6c6;border-radius:8px;font-size:13px;';
+  onay.innerHTML = `<span style="color:var(--red);flex:1">Silinecek. Emin misiniz?</span>
+    <button style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif" data-kid="${kid}" onclick="silOnayla(this)">Evet, Sil</button>
+    <button style="background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer" onclick="this.closest('.sil-onay').remove()">İptal</button>`;
+  btn.closest('div').after(onay);
+}
+
+function silOnayla(btn) {
+  const kid = btn.getAttribute('data-kid');
+  if (!kid) return;
   DB = DB.filter(k => k.id !== kid);
   localStorage.setItem('ta_db', JSON.stringify(DB));
   renderGecmis();
   renderExpStats();
-  // Bottom nav gecmis aktif yap
-  document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.bni').forEach(b => b.classList.remove('on'));
   document.getElementById('bni-gecmis')?.classList.add('on');
-  toast('🗑️ Silindi');
+  toast('🗑️ Kayıt silindi');
 }
 
 // Not düzenleme
