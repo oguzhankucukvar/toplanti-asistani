@@ -139,8 +139,8 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 .modal h3{font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px;color:var(--navy);margin-bottom:14px}
 
 /* TOAST */
-.toast{position:fixed;bottom:calc(74px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:var(--sh2);transition:transform .28s;z-index:999;white-space:nowrap;pointer-events:none}
-.toast.on{transform:translateX(-50%) translateY(0)}
+.toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:var(--sh2);transition:transform .28s ease, opacity .28s ease;z-index:9999;white-space:nowrap;pointer-events:none;opacity:0}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
 
 /* UTILS */
 .div{height:1px;background:var(--border);margin:14px 0}
@@ -154,7 +154,7 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 <body>
 
 <div class="topbar">
-  <div><span class="tlogo">RE<em>/</em>MAX<span class="tsub">Toplantı Asistanı</span></span></div>
+  <div style="cursor:pointer" onclick="goNav('yeni')"><span class="tlogo">RE<em>/</em>MAX<span class="tsub">Toplantı Asistanı</span></span></div>
   <button style="background:rgba(255,255,255,.13);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:17px;cursor:pointer" onclick="openSettings()">⚙️</button>
 </div>
 
@@ -840,14 +840,20 @@ function kaydet() {
 function renderGecmis() {
   const el=document.getElementById('gc-list');
   const cnt=document.getElementById('gc-count');
-  const sorted=[...DB].sort((a,b)=>new Date(b.gorusme?.tarih||0)-new Date(a.gorusme?.tarih||0));
+  // DB'yi orijinal indexle birlikte sırala
+  const sorted=[...DB].map((k,origIdx)=>({k,origIdx}))
+    .sort((a,b)=>new Date(b.k.gorusme?.tarih||0)-new Date(a.k.gorusme?.tarih||0));
   cnt.textContent=sorted.length+' kayıt';
-  if(!sorted.length){el.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-weight:600;margin-bottom:4px">Henüz görüşme yok</div><div style="font-size:12px">Yeni toplantı başlatın</div></div>';return;}
-  el.innerHTML=sorted.map((k,i)=>{
+  if(!sorted.length){
+    el.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-weight:600;margin-bottom:4px">Henüz görüşme yok</div><div style="font-size:12px">Yeni toplantı başlatın</div></div>';
+    return;
+  }
+  el.innerHTML=sorted.map(({k,origIdx},i)=>{
     const g=k.gorusme||k;
     const tarih=new Date(g.tarih||g._zaman).toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
     const ilgiCls=g.ilgi?.includes('Sıcak')?'tag-o':g.ilgi?.includes('İlgili')?'tag-g':'tag-n';
     const portCnt=k.portfoyler?.length||0;
+    // id'yi data attribute olarak sakla — tırnak çakışması yok
     return `<div class="hist-item" onclick="toggleHist(${i})">
       <div class="hi-row"><div class="hi-name">${g.musteri}</div><div class="hi-date">${tarih}</div></div>
       <div class="hi-tags">
@@ -856,15 +862,70 @@ function renderGecmis() {
         ${portCnt?`<span class="tag" style="background:var(--gold-p);color:var(--gold)">🏢 ${portCnt} Portföy</span>`:''}
       </div>
       <div id="hd-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-        ${g.not?`<div style="font-size:12px;color:var(--ink2);line-height:1.6;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:10px;margin-bottom:8px;max-height:200px;overflow-y:auto">${g.not}</div>`:''}
+        ${g.not
+          ? `<div id="not-view-${i}" style="font-size:12px;color:var(--ink2);line-height:1.6;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:10px;margin-bottom:8px;max-height:200px;overflow-y:auto">${g.not}</div>
+             <textarea id="not-edit-${i}" style="display:none;width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Open Sans',sans-serif;font-size:12px;line-height:1.6;resize:vertical;min-height:160px;margin-bottom:8px">${g.not}</textarea>`
+          : ''}
         ${g.adim?`<div style="font-size:12px;color:var(--navy);font-weight:600;margin-bottom:8px">→ ${g.adim}</div>`:''}
-        <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#f5c6c6" onclick="event.stopPropagation();silKayit('${k.id}')">🗑️ Sil</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
+          ${g.not?`<button class="btn btn-ghost btn-sm" id="duzenle-btn-${i}" onclick="notDuzenle(${i},${origIdx})">✏️ Notu Düzenle</button>
+          <button class="btn btn-ghost btn-sm" id="kaydet-btn-${i}" style="display:none;color:var(--green);border-color:var(--green)" onclick="notKaydet(${i},${origIdx})">✓ Kaydet</button>
+          <button class="btn btn-ghost btn-sm" id="iptal-btn-${i}" style="display:none" onclick="notIptal(${i})">İptal</button>`:''}
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#f5c6c6" data-kid="${k.id}" onclick="event.stopPropagation();silKayitBtn(this)">🗑️ Sil</button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
-function toggleHist(i){const el=document.getElementById('hd-'+i);if(el)el.style.display=el.style.display==='block'?'none':'block';}
-function silKayit(id){DB=DB.filter(k=>k.id!==id);localStorage.setItem('ta_db',JSON.stringify(DB));renderGecmis();renderExpStats();toast('🗑️ Silindi');}
+
+function toggleHist(i){
+  const el=document.getElementById('hd-'+i);
+  if(el) el.style.display=el.style.display==='block'?'none':'block';
+}
+
+// Silme — data attribute ile id alır, tırnak sorunu olmaz
+function silKayitBtn(btn) {
+  const kid = btn.getAttribute('data-kid');
+  if (!kid) { toast('❌ Kayıt ID bulunamadı'); return; }
+  if (!confirm('Bu görüşme silinecek. Emin misiniz?')) return;
+  DB = DB.filter(k => k.id !== kid);
+  localStorage.setItem('ta_db', JSON.stringify(DB));
+  renderGecmis();
+  renderExpStats();
+  // Bottom nav gecmis aktif yap
+  document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
+  document.getElementById('bni-gecmis')?.classList.add('on');
+  toast('🗑️ Silindi');
+}
+
+// Not düzenleme
+function notDuzenle(i, origIdx) {
+  document.getElementById('not-view-'+i).style.display='none';
+  document.getElementById('not-edit-'+i).style.display='block';
+  document.getElementById('duzenle-btn-'+i).style.display='none';
+  document.getElementById('kaydet-btn-'+i).style.display='';
+  document.getElementById('iptal-btn-'+i).style.display='';
+}
+
+function notIptal(i) {
+  // Orijinal nota geri dön
+  const view=document.getElementById('not-view-'+i);
+  const edit=document.getElementById('not-edit-'+i);
+  if(view) { edit.value=view.textContent; view.style.display=''; edit.style.display='none'; }
+  document.getElementById('duzenle-btn-'+i).style.display='';
+  document.getElementById('kaydet-btn-'+i).style.display='none';
+  document.getElementById('iptal-btn-'+i).style.display='none';
+}
+
+function notKaydet(i, origIdx) {
+  const yeniNot = document.getElementById('not-edit-'+i)?.value || '';
+  if (origIdx===undefined || origIdx<0 || origIdx>=DB.length) { toast('❌ Kayıt bulunamadı'); return; }
+  if (DB[origIdx].gorusme) DB[origIdx].gorusme.not = yeniNot;
+  else DB[origIdx].not = yeniNot;
+  localStorage.setItem('ta_db', JSON.stringify(DB));
+  toast('✅ Not güncellendi');
+  renderGecmis();
+}
 
 // ══════════════════════════════════════════════════════════════
 // EXPORT
@@ -901,7 +962,13 @@ function resetYeni(){
   const dtSection=document.getElementById('dt-section'); if(dtSection)dtSection.remove();
   showAsama('tip');
 }
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2800);}
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('on');
+  if(el._t) clearTimeout(el._t);
+  el._t=setTimeout(()=>{ el.classList.remove('on'); el._t=null; },2800);
+}
 
 // Android geri tuşu
 window.addEventListener('popstate',()=>{
