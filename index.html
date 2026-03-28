@@ -837,81 +837,103 @@ function kaydet() {
 // ══════════════════════════════════════════════════════════════
 // GEÇMİŞ
 // ══════════════════════════════════════════════════════════════
+
+// Global silme haritası — render sırasında doldurulur
+var _silMap = {};
+
 function renderGecmis() {
-  const el=document.getElementById('gc-list');
-  const cnt=document.getElementById('gc-count');
-  // DB'yi orijinal indexle birlikte sırala
-  const sorted=[...DB].map((k,origIdx)=>({k,origIdx}))
-    .sort((a,b)=>new Date(b.k.gorusme?.tarih||0)-new Date(a.k.gorusme?.tarih||0));
-  cnt.textContent=sorted.length+' kayıt';
-  if(!sorted.length){
-    el.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-weight:600;margin-bottom:4px">Henüz görüşme yok</div><div style="font-size:12px">Yeni toplantı başlatın</div></div>';
+  const el  = document.getElementById('gc-list');
+  const cnt = document.getElementById('gc-count');
+  _silMap   = {};
+
+  const sorted = [...DB]
+    .map((k, origIdx) => ({ k, origIdx }))
+    .sort((a, b) => new Date(b.k.gorusme?.tarih || 0) - new Date(a.k.gorusme?.tarih || 0));
+
+  cnt.textContent = sorted.length + ' kayıt';
+
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-weight:600;margin-bottom:4px">Henüz görüşme yok</div><div style="font-size:12px">Yeni toplantı başlatın</div></div>';
     return;
   }
-  el.innerHTML=sorted.map(({k,origIdx},i)=>{
-    const g=k.gorusme||k;
-    const tarih=new Date(g.tarih||g._zaman).toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
-    const ilgiCls=g.ilgi?.includes('Sıcak')?'tag-o':g.ilgi?.includes('İlgili')?'tag-g':'tag-n';
-    const portCnt=k.portfoyler?.length||0;
-    // id'yi data attribute olarak sakla — tırnak çakışması yok
+
+  el.innerHTML = sorted.map(({ k, origIdx }, i) => {
+    _silMap[i] = origIdx; // görüntü indeksi → DB indeksi
+    const g       = k.gorusme || k;
+    const tarih   = new Date(g.tarih || g._zaman).toLocaleDateString('tr-TR', { day:'numeric', month:'short', year:'numeric' });
+    const ilgiCls = g.ilgi?.includes('Sıcak') ? 'tag-o' : g.ilgi?.includes('İlgili') ? 'tag-g' : 'tag-n';
+    const portCnt = k.portfoyler?.length || 0;
+
     return `<div class="hist-item" onclick="toggleHist(${i})">
-      <div class="hi-row"><div class="hi-name">${g.musteri}</div><div class="hi-date">${tarih}</div></div>
+      <div class="hi-row">
+        <div class="hi-name">${g.musteri || '—'}</div>
+        <div class="hi-date">${tarih}</div>
+      </div>
       <div class="hi-tags">
-        <span class="tag tag-n">${g._tip_kisi||'Görüşme'}</span>
-        ${g.ilgi?`<span class="tag ${ilgiCls}">${g.ilgi}</span>`:''}
-        ${portCnt?`<span class="tag" style="background:var(--gold-p);color:var(--gold)">🏢 ${portCnt} Portföy</span>`:''}
+        <span class="tag tag-n">${g._tip_kisi || 'Görüşme'}</span>
+        ${g.ilgi ? `<span class="tag ${ilgiCls}">${g.ilgi}</span>` : ''}
+        ${portCnt ? `<span class="tag" style="background:var(--gold-p);color:var(--gold)">🏢 ${portCnt} Portföy</span>` : ''}
       </div>
       <div id="hd-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
         ${g.not
           ? `<div id="not-view-${i}" style="font-size:12px;color:var(--ink2);line-height:1.6;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:10px;margin-bottom:8px;max-height:200px;overflow-y:auto">${g.not}</div>
              <textarea id="not-edit-${i}" style="display:none;width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Open Sans',sans-serif;font-size:12px;line-height:1.6;resize:vertical;min-height:160px;margin-bottom:8px">${g.not}</textarea>`
           : ''}
-        ${g.adim?`<div style="font-size:12px;color:var(--navy);font-weight:600;margin-bottom:8px">→ ${g.adim}</div>`:''}
-        <div style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
-          ${g.not?`<button class="btn btn-ghost btn-sm" id="duzenle-btn-${i}" onclick="notDuzenle(${i},${origIdx})">✏️ Notu Düzenle</button>
-          <button class="btn btn-ghost btn-sm" id="kaydet-btn-${i}" style="display:none;color:var(--green);border-color:var(--green)" onclick="notKaydet(${i},${origIdx})">✓ Kaydet</button>
-          <button class="btn btn-ghost btn-sm" id="iptal-btn-${i}" style="display:none" onclick="notIptal(${i})">İptal</button>`:''}
-          <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#f5c6c6" data-kid="${k.id}" onclick="event.stopPropagation();silKayitBtn(this)">🗑️ Sil</button>
+        ${g.adim ? `<div style="font-size:12px;color:var(--navy);font-weight:600;margin-bottom:8px">→ ${g.adim}</div>` : ''}
+        <div id="aksiyonlar-${i}" style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
+          ${g.not
+            ? `<button class="btn btn-ghost btn-sm" id="duzenle-btn-${i}" onclick="notDuzenle(${i},${origIdx})">✏️ Notu Düzenle</button>
+               <button class="btn btn-ghost btn-sm" id="kaydet-btn-${i}" style="display:none;color:var(--green);border-color:var(--green)" onclick="notKaydet(${i},${origIdx})">✓ Kaydet</button>
+               <button class="btn btn-ghost btn-sm" id="iptal-btn-${i}" style="display:none" onclick="notIptal(${i})">İptal</button>`
+            : ''}
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#f5c6c6"
+            onclick="event.stopPropagation();silOnayGoster(${i})">🗑️ Sil</button>
+        </div>
+        <div id="sil-onay-${i}" style="display:none;margin-top:8px;padding:10px 12px;background:#fff0f0;border:1px solid #f5c6c6;border-radius:8px">
+          <div style="font-size:13px;color:var(--red);margin-bottom:8px;font-weight:600">Bu görüşme silinecek. Emin misiniz?</div>
+          <div style="display:flex;gap:8px">
+            <button style="flex:1;background:var(--red);color:#fff;border:none;border-radius:7px;padding:9px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;cursor:pointer"
+              onclick="event.stopPropagation();silYap(${i})">Evet, Sil</button>
+            <button style="flex:1;background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);border-radius:7px;padding:9px;font-family:'Montserrat',sans-serif;font-weight:600;font-size:13px;cursor:pointer"
+              onclick="event.stopPropagation();silOnayKapat(${i})">İptal</button>
+          </div>
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function toggleHist(i){
-  const el=document.getElementById('hd-'+i);
-  if(el) el.style.display=el.style.display==='block'?'none':'block';
+function toggleHist(i) {
+  const el = document.getElementById('hd-' + i);
+  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
-// Silme — önce onay barı göster
-function silKayitBtn(btn) {
-  const kid = btn.getAttribute('data-kid');
-  if (!kid) { toast('❌ Kayıt ID bulunamadı'); return; }
-
-  // Daha önce açık onay varsa kapat
-  document.querySelectorAll('.sil-onay').forEach(el => el.remove());
-
-  // Butonun yanına onay satırı ekle
-  const onay = document.createElement('div');
-  onay.className = 'sil-onay';
-  onay.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:#fff0f0;border:1px solid #f5c6c6;border-radius:8px;font-size:13px;';
-  onay.innerHTML = `<span style="color:var(--red);flex:1">Silinecek. Emin misiniz?</span>
-    <button style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif" data-kid="${kid}" onclick="silOnayla(this)">Evet, Sil</button>
-    <button style="background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer" onclick="this.closest('.sil-onay').remove()">İptal</button>`;
-  btn.closest('div').after(onay);
+function silOnayGoster(i) {
+  // Diğer açık onayları kapat
+  document.querySelectorAll('[id^="sil-onay-"]').forEach(el => el.style.display = 'none');
+  const el = document.getElementById('sil-onay-' + i);
+  if (el) el.style.display = 'block';
 }
 
-function silOnayla(btn) {
-  const kid = btn.getAttribute('data-kid');
-  if (!kid) return;
-  DB = DB.filter(k => k.id !== kid);
+function silOnayKapat(i) {
+  const el = document.getElementById('sil-onay-' + i);
+  if (el) el.style.display = 'none';
+}
+
+function silYap(i) {
+  const origIdx = _silMap[i];
+  if (origIdx === undefined) { toast('❌ Kayıt bulunamadı'); return; }
+  DB.splice(origIdx, 1);
   localStorage.setItem('ta_db', JSON.stringify(DB));
-  renderGecmis();
-  renderExpStats();
   document.querySelectorAll('.bni').forEach(b => b.classList.remove('on'));
   document.getElementById('bni-gecmis')?.classList.add('on');
+  renderGecmis();
+  renderExpStats();
   toast('🗑️ Kayıt silindi');
 }
+
+function silKayitBtn(btn) {} // eski — artık kullanılmıyor
+function silOnayla(btn) {}   // eski — artık kullanılmıyor
 
 // Not düzenleme
 function notDuzenle(i, origIdx) {
