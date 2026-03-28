@@ -260,9 +260,15 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 
 <!-- GEÇMİŞ -->
 <div class="scr" id="sc-gecmis">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px">Geçmiş</span>
     <span class="tag tag-n" id="gc-count"></span>
+  </div>
+  <!-- Ö7: Arama -->
+  <div class="fg" style="margin-bottom:12px">
+    <input type="text" id="gc-ara" placeholder="🔍 Müşteri adı ile ara…"
+      oninput="renderGecmis()"
+      style="background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;width:100%;font-size:13px;font-family:'Open Sans',sans-serif">
   </div>
   <div id="gc-list"></div>
 </div>
@@ -279,6 +285,10 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
     <button class="btn btn-primary" onclick="exportJSON()">⬇️ JSON İndir</button>
     <div class="div"></div>
     <button class="btn" style="background:#fff0f0;color:var(--red);border:1.5px solid #f5c6c6" onclick="clearAll()">🗑️ Tüm Verileri Sil</button>
+    <!-- Ö1: Yedekten geri yükleme -->
+    <div id="yedek-bolum" style="margin-top:10px;display:none">
+      <button class="btn btn-ghost" style="width:100%;color:var(--orange);border-color:var(--orange)" onclick="yedekGeriYukle()">↩️ Son Yedeği Geri Yükle</button>
+    </div>
     <div class="info-box" style="margin-top:14px">
       <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:var(--navy);margin-bottom:6px">Nasıl çalışır?</div>
       <ol>
@@ -439,7 +449,7 @@ function resetA() {
 // ══════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   showScr('sc-yeni'); showAsama('tip');
-  renderGecmis(); renderExpStats();
+  renderGecmis(); renderExpStats(); gunceleYedekButonu();
 });
 
 function goNav(n) {
@@ -471,14 +481,16 @@ function secTip(tip, el) {
   A.sirket = document.getElementById('t-sirket').value.trim();
   A.tarih = new Date().toISOString();
   A.cevaplar = {}; A.daireTipleri = []; A.ekSorular = []; A.riskler = [];
+  _duzenleIdx = null; // H5 DÜZELTMESİ: yeni toplantıda düzenleme modunu sıfırla
   document.querySelectorAll('.tip-card').forEach(c=>c.classList.remove('sel'));
   if(el) el.classList.add('sel');
   document.getElementById('soru-tip-lbl').textContent = tip;
   document.getElementById('soru-musteri-lbl').textContent = '— ' + musteri;
   document.getElementById('ek-listesi').innerHTML = '';
+  const dtSection = document.getElementById('dt-section'); if(dtSection) dtSection.remove();
   ekSayac = 0;
-  if (tip === 'Müteahhit') { dtEkle(); } // İlk daire tipi satırı
   renderSorular();
+  if (tip === 'Müteahhit') { dtEkle(); }
   showAsama('soru');
 }
 
@@ -526,20 +538,30 @@ function renderCevapAlani(s) {
   if (s.tip === 'chip' || s.tip === 'chip-multi') {
     const multi = s.tip === 'chip-multi';
     const secilenler = Array.isArray(cevap) ? cevap : (cevap ? [cevap] : []);
+    // H1 DÜZELTMESİ: onclick'te metin değil index kullan — özel karakter çakışması yok
     return `<div class="chip-row">
-      ${s.secenekler.map(o => `<div class="chip${secilenler.includes(o)?' on':''}" onclick="chipSec('${s.id}','${o}',${multi})">${o}</div>`).join('')}
+      ${s.secenekler.map((o,idx) => `<div class="chip${secilenler.includes(o)?' on':''}"
+        onclick="chipSecIdx('${s.id}',${idx},${multi})">${o}</div>`).join('')}
     </div>`;
   }
   if (s.tip === 'textarea') {
-    return `<textarea class="q-ans" rows="3" id="inp-${s.id}" onchange="cevapGir('${s.id}',this.value)">${cevap}</textarea>`;
+    // H2 DÜZELTMESİ: onchange → oninput (anlık kayıt)
+    return `<textarea class="q-ans" rows="3" id="inp-${s.id}"
+      oninput="cevapGir('${s.id}',this.value)">${cevap}</textarea>`;
   }
   if (s.tip === 'number') {
-    return `<input type="number" class="q-ans" style="min-height:40px;resize:none" id="inp-${s.id}" value="${cevap}" onchange="cevapGir('${s.id}',this.value)" placeholder="Sayı girin">`;
+    return `<input type="number" class="q-ans" style="min-height:40px;resize:none"
+      id="inp-${s.id}" value="${cevap}"
+      oninput="cevapGir('${s.id}',this.value)" placeholder="Sayı girin">`;
   }
   if (s.tip === 'date') {
-    return `<input type="date" class="q-ans" style="min-height:40px;resize:none" id="inp-${s.id}" value="${cevap}" onchange="cevapGir('${s.id}',this.value)">`;
+    return `<input type="date" class="q-ans" style="min-height:40px;resize:none"
+      id="inp-${s.id}" value="${cevap}"
+      onchange="cevapGir('${s.id}',this.value)">`;
   }
-  return `<input type="text" class="q-ans" style="min-height:40px;resize:none" id="inp-${s.id}" value="${cevap}" onchange="cevapGir('${s.id}',this.value)" placeholder="Yanıtı girin…">`;
+  return `<input type="text" class="q-ans" style="min-height:40px;resize:none"
+    id="inp-${s.id}" value="${cevap}"
+    oninput="cevapGir('${s.id}',this.value)" placeholder="Yanıtı girin…">`;
 }
 
 function riskNoteHTML(risk) {
@@ -552,6 +574,27 @@ function riskNoteHTML(risk) {
 // ══════════════════════════════════════════════════════════════
 // CEVAP GİRİŞİ
 // ══════════════════════════════════════════════════════════════
+
+// H1 DÜZELTMESİ: Index bazlı chip seçimi — özel karakter sorununu çözer
+function chipSecIdx(soruId, idx, multi) {
+  if (navigator.vibrate) navigator.vibrate(8);
+  const sorular = SORU_AGACI[A.tip] || [];
+  const soru = sorular.find(s => s.id === soruId);
+  if (!soru || !soru.secenekler) return;
+  const deger = soru.secenekler[idx];
+  if (deger === undefined) return;
+  if (multi) {
+    let mevcut = Array.isArray(A.cevaplar[soruId]) ? [...A.cevaplar[soruId]] : [];
+    if (mevcut.includes(deger)) mevcut = mevcut.filter(x => x !== deger);
+    else mevcut.push(deger);
+    A.cevaplar[soruId] = mevcut;
+  } else {
+    A.cevaplar[soruId] = A.cevaplar[soruId] === deger ? '' : deger;
+  }
+  renderSorular();
+}
+
+// Eski chipSec — geriye dönük uyumluluk
 function chipSec(soruId, deger, multi) {
   if (navigator.vibrate) navigator.vibrate(8);
   if (multi) {
@@ -850,7 +893,7 @@ function kaydet() {
     toast('✅ Kaydedildi!');
   }
 
-  localStorage.setItem('ta_db', JSON.stringify(DB));
+  guvenliKaydet(DB);
   if (navigator.vibrate) navigator.vibrate([30,50,30]);
   setTimeout(() => goNav('gecmis'), 600);
 }
@@ -867,11 +910,22 @@ function renderGecmis() {
   const cnt = document.getElementById('gc-count');
   _silMap   = {};
 
+  // Ö7: Arama filtresi
+  const aramaEl    = document.getElementById('gc-ara');
+  const aramaMetni = (aramaEl?.value || '').toLowerCase().trim();
+
   const sorted = [...DB]
     .map((k, origIdx) => ({ k, origIdx }))
+    .filter(({ k }) => {
+      if (!aramaMetni) return true;
+      const g = k.gorusme || k;
+      return (g.musteri||'').toLowerCase().includes(aramaMetni) ||
+             (g._tip_kisi||'').toLowerCase().includes(aramaMetni) ||
+             (g.not||'').toLowerCase().includes(aramaMetni);
+    })
     .sort((a, b) => new Date(b.k.gorusme?.tarih || 0) - new Date(a.k.gorusme?.tarih || 0));
 
-  cnt.textContent = sorted.length + ' kayıt';
+  cnt.textContent = sorted.length + (aramaMetni ? ` sonuç` : ' kayıt');
 
   if (!sorted.length) {
     el.innerHTML = '<div class="empty"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-weight:600;margin-bottom:4px">Henüz görüşme yok</div><div style="font-size:12px">Yeni toplantı başlatın</div></div>';
@@ -947,7 +1001,7 @@ function silYap(i) {
   const origIdx = _silMap[i];
   if (origIdx === undefined) { toast('❌ Kayıt bulunamadı'); return; }
   DB.splice(origIdx, 1);
-  localStorage.setItem('ta_db', JSON.stringify(DB));
+  guvenliKaydet(DB);
   document.querySelectorAll('.bni').forEach(b => b.classList.remove('on'));
   document.getElementById('bni-gecmis')?.classList.add('on');
   renderGecmis();
@@ -1097,32 +1151,141 @@ function notKaydet(i, origIdx) {
   if (origIdx===undefined || origIdx<0 || origIdx>=DB.length) { toast('❌ Kayıt bulunamadı'); return; }
   if (DB[origIdx].gorusme) DB[origIdx].gorusme.not = yeniNot;
   else DB[origIdx].not = yeniNot;
-  localStorage.setItem('ta_db', JSON.stringify(DB));
+  guvenliKaydet(DB);
   toast('✅ Not güncellendi');
   renderGecmis();
 }
 
 // ══════════════════════════════════════════════════════════════
-// EXPORT
+// EXPORT + VERİ GÜVENLİĞİ
 // ══════════════════════════════════════════════════════════════
-function renderExpStats(){
-  const el=document.getElementById('exp-stats'); if(!el)return;
-  const gorCnt=DB.length; const portCnt=DB.reduce((s,k)=>s+(k.portfoyler?.length||0),0);
-  el.innerHTML=`<div style="display:flex;gap:8px">
-    <div style="flex:1;background:var(--navy-p);border-radius:10px;padding:10px 8px;text-align:center"><div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--navy)">${gorCnt}</div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Görüşme</div></div>
-    <div style="flex:1;background:var(--green-p);border-radius:10px;padding:10px 8px;text-align:center"><div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--green)">${portCnt}</div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Portföy</div></div>
-  </div>`;
+
+// H3 DÜZELTMESİ: Güvenli kayıt — try/catch + boyut kontrolü
+function guvenliKaydet(data) {
+  try {
+    const json = JSON.stringify(data);
+    const boyutKB = Math.round((json.length * 2) / 1024);
+    if (boyutKB > 4500) { // 4.5MB üstünde uyar
+      toast('⚠️ Depolama alanı dolmak üzere! Lütfen export yapın.');
+    }
+    localStorage.setItem('ta_db', json);
+    // Otomatik yedek — Ö1
+    localStorage.setItem('ta_db_backup', json);
+    localStorage.setItem('ta_son_kayit', new Date().toISOString());
+    return true;
+  } catch(e) {
+    toast('❌ Kayıt başarısız! Depolama dolu olabilir. Lütfen export yapın.');
+    return false;
+  }
 }
-function exportJSON(){
-  if(!DB.length){toast('⚠️ Dışa aktarılacak kayıt yok');return;}
-  const gorusmeler=DB.map(k=>k.gorusme||k).map(g=>({_id:g._id,_zaman:g._zaman,tip_veri:'gorusme',musteri:g.musteri,musteriId:null,tarih:g.tarih,tip:g.tip,ilgi:g.ilgi,mulk:g.mulk||'',not:g.not||'',adim:g.adim||'',hat:g.hat||''}));
-  const portfoyler=DB.flatMap(k=>k.portfoyler||[]).map(p=>({_id:p._id,_zaman:p._zaman,tip_veri:'portfoy',ad:p.ad,bolge:p.bolge,tip:p.tip,_crm_kategori:p.kategori,fiyat:p.fiyat,alan:p.alan,oda:p.oda,kat:p.kat||'',cephe:p.cephe||'',tapu:p.tapu||'',ozellikler:p.ozellikler||'',durum:p.durum,acik:p.acik,musteri:p.musteri,tarih:p.tarih}));
-  const payload={_meta:{kaynak:'Toplantı Asistanı v4',versiyon:'4.0',tarih:new Date().toISOString(),gorusme_sayisi:gorusmeler.length,portfoy_sayisi:portfoyler.length},gorusmeler,portfoyler};
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`saha_crm_${new Date().toISOString().slice(0,10)}.json`;a.click();
+
+function renderExpStats() {
+  const el = document.getElementById('exp-stats'); if (!el) return;
+  const gorCnt  = DB.length;
+  const portCnt = DB.reduce((s,k) => s + (k.portfoyler?.length||0), 0);
+
+  // Ö2: Son export uyarısı
+  const sonExport  = localStorage.getItem('ta_son_export');
+  const sonKayit   = localStorage.getItem('ta_son_kayit');
+  let exportUyari  = '';
+  if (gorCnt > 0 && sonKayit) {
+    const gunFark = Math.floor((Date.now() - new Date(sonExport||0)) / 86400000);
+    if (!sonExport || gunFark > 3) {
+      exportUyari = `<div style="background:#fff0f0;border:1px solid #f5c6c6;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--red)">
+        ⚠️ ${sonExport ? gunFark+' gündür' : 'Hiç'} export yapılmadı — CRM'e aktarmayı unutmayın.
+      </div>`;
+    }
+  }
+
+  // Ö3: Depolama boyutu
+  const boyutKB = Math.round((JSON.stringify(DB).length * 2) / 1024);
+  const boyutPct = Math.round(boyutKB / 51.2); // 5120KB = 5MB
+
+  el.innerHTML = `${exportUyari}
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1;background:var(--navy-p);border-radius:10px;padding:10px 8px;text-align:center">
+        <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--navy)">${gorCnt}</div>
+        <div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Görüşme</div>
+      </div>
+      <div style="flex:1;background:var(--green-p);border-radius:10px;padding:10px 8px;text-align:center">
+        <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--green)">${portCnt}</div>
+        <div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Portföy</div>
+      </div>
+    </div>
+    <div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:var(--ink3)">Depolama</span>
+      <span style="font-size:11px;color:var(--ink3)">${boyutKB} KB / 5120 KB</span>
+    </div>
+    <div style="height:5px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:14px">
+      <div style="height:100%;width:${boyutPct}%;background:${boyutPct>80?'var(--red)':boyutPct>60?'var(--gold)':'var(--green)'};border-radius:99px;transition:width .4s"></div>
+    </div>`;
+}
+
+function exportJSON() {
+  if (!DB.length) { toast('⚠️ Dışa aktarılacak kayıt yok'); return; }
+  const gorusmeler = DB.map(k=>k.gorusme||k).map(g=>({
+    _id:g._id, _zaman:g._zaman, tip_veri:'gorusme',
+    musteri:g.musteri, musteriId:null, tarih:g.tarih,
+    tip:g.tip, ilgi:g.ilgi, mulk:g.mulk||'',
+    not:g.not||'', adim:g.adim||'', hat:g.hat||''
+  }));
+  const portfoyler = DB.flatMap(k=>k.portfoyler||[]).map(p=>({
+    _id:p._id, _zaman:p._zaman, tip_veri:'portfoy',
+    ad:p.ad, bolge:p.bolge, tip:p.tip,
+    _crm_kategori:p.kategori, fiyat:p.fiyat, alan:p.alan,
+    oda:p.oda, kat:p.kat||'', cephe:p.cephe||'',
+    tapu:p.tapu||'', ozellikler:p.ozellikler||'',
+    durum:p.durum, acik:p.acik, musteri:p.musteri, tarih:p.tarih
+  }));
+  const payload = {
+    _meta:{ kaynak:'Toplantı Asistanı v4', versiyon:'4.0',
+      tarih:new Date().toISOString(),
+      gorusme_sayisi:gorusmeler.length, portfoy_sayisi:portfoyler.length },
+    gorusmeler, portfoyler
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `saha_crm_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  // Ö2: Son export tarihini kaydet
+  localStorage.setItem('ta_son_export', new Date().toISOString());
   toast(`✅ ${gorusmeler.length} görüşme, ${portfoyler.length} portföy export edildi`);
+  renderExpStats();
 }
-function clearAll(){if(!confirm('Tüm kayıtlar silinecek?'))return;DB=[];localStorage.setItem('ta_db',JSON.stringify(DB));renderGecmis();renderExpStats();toast('🗑️ Silindi');}
+
+// H4 DÜZELTMESİ: clearAll — confirm() yerine uygulama içi onay
+function clearAll() {
+  const el = document.getElementById('clearall-onay');
+  if (el) { el.style.display = el.style.display==='none' ? 'block' : 'none'; return; }
+  // İlk kez — onay kutusunu oluştur
+  const card = document.querySelector('#sc-export .card');
+  const onay = document.createElement('div');
+  onay.id = 'clearall-onay';
+  onay.style.cssText = 'background:#fff0f0;border:1px solid #f5c6c6;border-radius:10px;padding:14px;margin-top:12px';
+  onay.innerHTML = `<div style="font-size:13px;color:var(--red);font-weight:600;margin-bottom:10px">
+    ⚠️ Tüm ${DB.length} görüşme silinecek. Bu işlem geri alınamaz. Emin misiniz?
+  </div>
+  <div style="display:flex;gap:8px">
+    <button style="flex:1;background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;cursor:pointer"
+      onclick="clearAllOnayla()">Evet, Tümünü Sil</button>
+    <button style="flex:1;background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);border-radius:8px;padding:10px;font-family:'Montserrat',sans-serif;font-weight:600;font-size:13px;cursor:pointer"
+      onclick="document.getElementById('clearall-onay').style.display='none'">İptal</button>
+  </div>`;
+  card.appendChild(onay);
+}
+
+function clearAllOnayla() {
+  // Yedeği koru — Ö1
+  localStorage.setItem('ta_db_backup', JSON.stringify(DB));
+  DB = [];
+  guvenliKaydet(DB);
+  renderGecmis();
+  renderExpStats();
+  const onay = document.getElementById('clearall-onay');
+  if (onay) onay.style.display = 'none';
+  toast('🗑️ Tüm veriler silindi. Yedek korundu.');
+}
 
 // ══════════════════════════════════════════════════════════════
 // RESET & TOAST
@@ -1136,6 +1299,30 @@ function resetYeni(){
   document.getElementById('ek-listesi').innerHTML='';
   const dtSection=document.getElementById('dt-section'); if(dtSection)dtSection.remove();
   showAsama('tip');
+}
+
+// Ö1: Yedekten geri yükleme
+function yedekGeriYukle() {
+  const yedek = localStorage.getItem('ta_db_backup');
+  if (!yedek) { toast('⚠️ Yedek bulunamadı'); return; }
+  try {
+    const parsed = JSON.parse(yedek);
+    DB = parsed;
+    guvenliKaydet(DB);
+    renderGecmis();
+    renderExpStats();
+    toast('✅ Yedek geri yüklendi — ' + DB.length + ' kayıt');
+  } catch(e) {
+    toast('❌ Yedek bozuk, geri yüklenemedi');
+  }
+}
+
+// Export ekranında yedek butonunu göster/gizle
+function gunceleYedekButonu() {
+  const el = document.getElementById('yedek-bolum');
+  if (!el) return;
+  const yedek = localStorage.getItem('ta_db_backup');
+  el.style.display = yedek ? 'block' : 'none';
 }
 function toast(msg){
   const el=document.getElementById('toast');
