@@ -779,14 +779,17 @@ function renderExportOnizleme() {
 // ══════════════════════════════════════════════════════════════
 // KAYDET
 // ══════════════════════════════════════════════════════════════
+var _duzenleIdx = null; // null = yeni kayıt, sayı = DB indeksi
+
 function kaydet() {
   if (!A.musteri) { toast('❌ Müşteri adı eksik'); return; }
-  const not = document.getElementById('f-not').value.trim();
+  const not  = document.getElementById('f-not').value.trim();
   const adim = document.getElementById('f-adim').value.trim();
-  const hat = document.getElementById('f-hat').value;
+  const hat  = document.getElementById('f-hat').value;
 
   const gorusme = {
-    _id:'ta_g_'+Date.now(), _zaman:new Date().toISOString(), tip_veri:'gorusme',
+    _id: _duzenleIdx !== null ? (DB[_duzenleIdx]?.gorusme?._id || 'ta_g_'+Date.now()) : 'ta_g_'+Date.now(),
+    _zaman: new Date().toISOString(), tip_veri:'gorusme',
     musteri:A.musteri, musteriId:null, tarih:A.tarih,
     tip:'Yüz Yüze', ilgi:A.ilgi,
     mulk: A.tip==='Müteahhit' ? (A.cevaplar['m1']||A.sirket||'') : (A.cevaplar['s1']||''),
@@ -803,9 +806,9 @@ function kaydet() {
         ad:`${A.cevaplar['m1']||A.sirket||'Proje'} — ${dt.tip}`,
         bolge:A.cevaplar['m1']||'', tip:'Satılık', kategori:'paylasim',
         fiyat:dt.fiyat||'', alan:dt.alan||'', oda:dt.tip, kat:dt.kat||'', cephe:dt.cephe||'',
-        ozellikler:A.cevaplar['m5']||(Array.isArray(A.cevaplar['m5'])?A.cevaplar['m5'].join(', '):''),
+        ozellikler:Array.isArray(A.cevaplar['m5'])?A.cevaplar['m5'].join(', '):(A.cevaplar['m5']||''),
         durum:'Aktif',
-        acik:`${A.cevaplar['m3']||''} | Adet: ${dt.adet} | Kalan: ${dt.kalan} | Pazarlık: ₺${dt.pazarlik||0} | Ödeme: ${A.cevaplar['m7']||(Array.isArray(A.cevaplar['m7'])?A.cevaplar['m7'].join(', '):'')}`,
+        acik:`${A.cevaplar['m3']||''} | Adet: ${dt.adet} | Kalan: ${dt.kalan} | Pazarlık: ₺${dt.pazarlik||0} | Ödeme: ${Array.isArray(A.cevaplar['m7'])?A.cevaplar['m7'].join(', '):(A.cevaplar['m7']||'')}`,
         musteri:A.musteri, tarih:A.tarih
       });
     });
@@ -815,22 +818,40 @@ function kaydet() {
       _id:'ta_p_'+Date.now(), _zaman:new Date().toISOString(), tip_veri:'portfoy',
       ad:`${A.cevaplar['s2']||'Mülk'} — ${A.cevaplar['s1']}`,
       bolge:A.cevaplar['s1']||'', tip:A.cevaplar['s3']||'Satılık',
-      kategori:A.cevaplar['s13']==='Yetkili Portföyüm'?'yetkili':A.cevaplar['s13']==='Sahibinden'?'paylasim':'paylasim',
+      kategori:A.cevaplar['s13']==='Yetkili Portföyüm'?'yetkili':'paylasim',
       fiyat:(A.cevaplar['s8']||'').replace(/[^0-9]/g,'')||'',
       alan:(A.cevaplar['s4']||'').replace(/[^0-9]/g,'')||'',
       oda:A.cevaplar['s4']||'', kat:'',
       ozellikler:Array.isArray(A.cevaplar['s7'])?A.cevaplar['s7'].join(', '):(A.cevaplar['s7']||''),
-      tapu:A.cevaplar['s9']||'',
-      durum:'Aktif',
+      tapu:A.cevaplar['s9']||'', durum:'Aktif',
       acik:`${A.cevaplar['s1']||''}\nSatış nedeni: ${A.cevaplar['s12']||''}\n${A.cevaplar['s14']||''}`,
       musteri:A.musteri, tarih:A.tarih
     });
   }
 
-  DB.push({ gorusme, portfoyler, id:'k'+Date.now() });
+  // Düzenleme snapshot — bir sonraki düzenlemede geri yüklemek için
+  const snapshot = {
+    tip:A.tip, musteri:A.musteri, sirket:A.sirket, ilgi:A.ilgi, tarih:A.tarih,
+    cevaplar:JSON.parse(JSON.stringify(A.cevaplar)),
+    daireTipleri:JSON.parse(JSON.stringify(A.daireTipleri)),
+    ekSorular:JSON.parse(JSON.stringify(A.ekSorular))
+  };
+
+  const kayit = { gorusme, portfoyler, id:'k'+Date.now(), _snapshot:snapshot };
+
+  if (_duzenleIdx !== null) {
+    // Mevcut kaydı güncelle — id'yi koru
+    kayit.id = DB[_duzenleIdx].id || kayit.id;
+    DB[_duzenleIdx] = kayit;
+    _duzenleIdx = null;
+    toast('✅ Kayıt güncellendi!');
+  } else {
+    DB.push(kayit);
+    toast('✅ Kaydedildi!');
+  }
+
   localStorage.setItem('ta_db', JSON.stringify(DB));
-  toast('✅ Kaydedildi!');
-  if(navigator.vibrate) navigator.vibrate([30,50,30]);
+  if (navigator.vibrate) navigator.vibrate([30,50,30]);
   setTimeout(() => goNav('gecmis'), 600);
 }
 
@@ -881,8 +902,10 @@ function renderGecmis() {
           : ''}
         ${g.adim ? `<div style="font-size:12px;color:var(--navy);font-weight:600;margin-bottom:8px">→ ${g.adim}</div>` : ''}
         <div id="aksiyonlar-${i}" style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" style="color:var(--navy);border-color:var(--navy)"
+            onclick="event.stopPropagation();kaydıDuzenle(${i})">✏️ Düzenle</button>
           ${g.not
-            ? `<button class="btn btn-ghost btn-sm" id="duzenle-btn-${i}" onclick="notDuzenle(${i},${origIdx})">✏️ Notu Düzenle</button>
+            ? `<button class="btn btn-ghost btn-sm" id="duzenle-btn-${i}" onclick="notDuzenle(${i},${origIdx})">📝 Notu Düzenle</button>
                <button class="btn btn-ghost btn-sm" id="kaydet-btn-${i}" style="display:none;color:var(--green);border-color:var(--green)" onclick="notKaydet(${i},${origIdx})">✓ Kaydet</button>
                <button class="btn btn-ghost btn-sm" id="iptal-btn-${i}" style="display:none" onclick="notIptal(${i})">İptal</button>`
             : ''}
@@ -934,6 +957,121 @@ function silYap(i) {
 
 function silKayitBtn(btn) {} // eski — artık kullanılmıyor
 function silOnayla(btn) {}   // eski — artık kullanılmıyor
+
+// ── TAM DÜZENLEME — snapshot'tan tüm veriyi geri yükle ───────
+function kaydıDuzenle(i) {
+  const origIdx = _silMap[i];
+  if (origIdx === undefined) { toast('❌ Kayıt bulunamadı'); return; }
+  const kayit = DB[origIdx];
+  const snap  = kayit._snapshot;
+  const g     = kayit.gorusme || kayit;
+
+  _duzenleIdx = origIdx;
+
+  // A objesini doldur
+  if (snap) {
+    // Snapshot varsa (v4 ile kaydedilmiş) — tam geri yükleme
+    A = {
+      tip:          snap.tip,
+      musteri:      snap.musteri,
+      sirket:       snap.sirket || '',
+      ilgi:         snap.ilgi || '🔥 Çok Sıcak',
+      tarih:        snap.tarih || g.tarih || new Date().toISOString(),
+      cevaplar:     JSON.parse(JSON.stringify(snap.cevaplar || {})),
+      daireTipleri: JSON.parse(JSON.stringify(snap.daireTipleri || [])),
+      ekSorular:    JSON.parse(JSON.stringify(snap.ekSorular || [])),
+      riskler:      []
+    };
+  } else {
+    // Snapshot yok (eski kayıt) — temel bilgilerle doldur
+    A = resetA();
+    A.tip     = g._tip_kisi || 'Satıcı';
+    A.musteri = g.musteri   || '';
+    A.sirket  = g._sirket   || '';
+    A.ilgi    = g.ilgi      || '🔥 Çok Sıcak';
+    A.tarih   = g.tarih     || new Date().toISOString();
+  }
+
+  // Yeni ekrana geç
+  showScr('sc-yeni');
+  document.querySelectorAll('.bni').forEach(b => b.classList.remove('on'));
+  document.getElementById('bni-yeni')?.classList.add('on');
+
+  // Katılımcı alanlarını doldur
+  document.getElementById('t-musteri').value = A.musteri;
+  document.getElementById('t-sirket').value  = A.sirket;
+
+  // İlgi chiplerini ayarla
+  document.querySelectorAll('.ilgi-chip').forEach(c => {
+    c.classList.toggle('on', c.dataset.v === A.ilgi);
+  });
+
+  // Tip kartını seç
+  document.querySelectorAll('.tip-card').forEach(c => c.classList.remove('sel'));
+
+  // Ek sorular listesini temizle
+  document.getElementById('ek-listesi').innerHTML = '';
+  ekSayac = 0;
+
+  // Daire tipi bölümünü temizle
+  const dtSection = document.getElementById('dt-section');
+  if (dtSection) dtSection.remove();
+
+  // Soru ekranına geç
+  document.getElementById('soru-tip-lbl').textContent    = A.tip;
+  document.getElementById('soru-musteri-lbl').textContent = '— ' + A.musteri;
+
+  // Müteahhit → daire tiplerini yükle
+  if (A.tip === 'Müteahhit') {
+    // Önce soru listesini render et (dt-section için gerekli)
+    renderSorular();
+    showAsama('soru');
+    // Daire tiplerini yükle
+    if (A.daireTipleri.length) {
+      A.daireTipleri.forEach(dt => {
+        dtEkle();
+        // En son eklenen satırı doldur
+        const satirlar = document.querySelectorAll('.dt-row');
+        const son = satirlar[satirlar.length - 1];
+        if (son) {
+          const id = son.id;
+          const set = (sfx, val) => { const el = document.getElementById(id+sfx); if(el) el.value = val||''; };
+          set('-tip', dt.tip); set('-adet', dt.adet); set('-alan', dt.alan);
+          set('-kat', dt.kat); set('-cephe', dt.cephe); set('-fiyat', dt.fiyat);
+          set('-pazarlik', dt.pazarlik); set('-kalan', dt.kalan);
+        }
+      });
+    } else {
+      dtEkle();
+    }
+  } else {
+    renderSorular();
+    showAsama('soru');
+  }
+
+  // Ek soruları yükle
+  if (A.ekSorular.length) {
+    A.ekSorular.forEach(e => {
+      ekSoruEkle();
+      const satirlar = document.querySelectorAll('.ek-row');
+      const son = satirlar[satirlar.length - 1];
+      if (son) {
+        const id = son.id;
+        const soruEl  = document.getElementById(id + '-soru');
+        const cevapEl = document.getElementById(id + '-cevap');
+        if (soruEl)  soruEl.value  = e.soru  || '';
+        if (cevapEl) cevapEl.value = e.cevap || '';
+      }
+    });
+  }
+
+  // Sonraki adım ve hatırlatıcı
+  document.getElementById('f-adim').value = g.adim || '';
+  document.getElementById('f-hat').value  = g.hat  || '';
+
+  toast('✏️ Düzenleme modu — değişiklikleri kaydedin');
+  updateProg();
+}
 
 // Not düzenleme
 function notDuzenle(i, origIdx) {
@@ -990,7 +1128,7 @@ function clearAll(){if(!confirm('Tüm kayıtlar silinecek?'))return;DB=[];localS
 // RESET & TOAST
 // ══════════════════════════════════════════════════════════════
 function resetYeni(){
-  A=resetA(); ekSayac=0;
+  A=resetA(); ekSayac=0; _duzenleIdx=null;
   document.getElementById('t-musteri').value='';
   document.getElementById('t-sirket').value='';
   document.querySelectorAll('.ilgi-chip').forEach((c,i)=>c.classList.toggle('on',i===0));
