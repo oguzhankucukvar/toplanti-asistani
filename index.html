@@ -186,11 +186,6 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
         <div><div class="tip-lbl">Alıcı</div><div class="tip-desc">Bütçe, tercih, bölge, finansman</div></div>
         <div class="tip-cnt">Görüşme</div>
       </div>
-      <div class="tip-card" onclick="secTip('Esnaf',this)">
-        <div class="tip-icon">🏪</div>
-        <div><div class="tip-lbl">Esnaf / Etki Çevresi</div><div class="tip-desc">Piyasa bilgisi, mülkiyet, referans</div></div>
-        <div class="tip-cnt">Müşteri</div>
-      </div>
     </div>
     <div class="div"></div>
     <div class="sec-title">Katılımcı Bilgisi</div>
@@ -397,23 +392,8 @@ const SORU_AGACI = {
       riskKural: (v) => v && v!=='Hayır' ? { tip:'blue', mesaj:'Ortak karar vericiler — sunum planlanmalı.' } : null },
     { id:'a11', soru:'Ek notlar / özel talepler:', tip:'textarea', hint:'Opsiyonel' },
   ],
-
-  // ─── ESNAF ──────────────────────────────────────────────────
-  Esnaf: [
-    { id:'e1', soru:'İşletme adı ve türü nedir?', tip:'text' },
-    { id:'e2', soru:'İş tipi nedir?', tip:'chip-multi', secenekler:['Market','Restoran','Kafe','Eczane','Berber/Güzellik','Tekstil','Elektronik','Yapı Malzeme','Diğer'] },
-    { id:'e3', soru:'Mülkiyet durumu nedir?', tip:'chip', secenekler:['Kira','Kendi Mülkü','Devir'],
-      riskKural: (v) => v==='Devir' ? { tip:'green', mesaj:'Devir — potansiyel satın alma veya portföy fırsatı.' } : null },
-    { id:'e3b', soru:'Tahmini kira bedeli?', tip:'text', hint:'örn: ₺25.000/ay',
-      kosul:{ soruId:'e3', degerler:['Kira'] } },
-    { id:'e4', soru:'Bölgedeki piyasa yorumu nedir?', tip:'textarea', hint:'Kira artışı, talep, boş dükkan vb.' },
-    { id:'e5', soru:'Son 1 yılda bölgede mülk satışı / kiralanması gözlemlediler mi?', tip:'chip', secenekler:['Evet — hareketli','Kısmen','Hayır — durgun'] },
-    { id:'e6', soru:'Potansiyel referans veya tanıdık var mı?', tip:'chip', secenekler:['Evet','Belki','Hayır'],
-      riskKural: (v) => v==='Evet' ? { tip:'green', mesaj:'Referans potansiyeli — takip edilmeli.' } : null },
-    { id:'e7', soru:'İletişim tercihi nedir?', tip:'chip', secenekler:['Telefon','WhatsApp','Yüz Yüze','E-posta'] },
-    { id:'e8', soru:'Ek notlar:', tip:'textarea', hint:'Opsiyonel' },
-  ],
 };
+
 
 // ══════════════════════════════════════════════════════════════
 // RİSK KURALLARI — cevap bazlı otomatik uyarılar
