@@ -205,12 +205,11 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 
   <!-- B: Soru Akışı -->
   <div id="asama-soru" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="display:flex;align-items:center;margin-bottom:10px">
       <div>
         <span id="soru-tip-lbl" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:var(--navy)"></span>
         <span id="soru-musteri-lbl" style="font-size:12px;color:var(--ink3);margin-left:5px"></span>
       </div>
-      <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#f5c6c6" onclick="showAsama('ozet');ozetOlustur()">🏁 Bitir</button>
     </div>
     <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
     <div id="soru-listesi"></div>
@@ -224,6 +223,8 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 
     <div style="height:12px"></div>
     <button class="btn btn-green" onclick="showAsama('ozet');ozetOlustur()">📋 Özeti Oluştur</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-ghost" style="width:100%;color:var(--red);border-color:#f5c6c6" onclick="showAsama('ozet');ozetOlustur()">🏁 Hızlı Bitir</button>
   </div>
 
   <!-- C: Özet -->
