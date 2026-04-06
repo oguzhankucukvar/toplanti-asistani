@@ -274,7 +274,7 @@ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
   <div class="card">
     <div class="card-title">📤 CRM'e Aktar</div>
     <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:14px">
-      Kayıtlar <b>saha_crm_*.json</b> formatında export edilir.<br>
+      Kayıtlar <b>toplanti_asistan_*.json</b> formatında export edilir.<br>
       CRM → Görüşmeler <b>ve</b> Portföy → <b>JSON Yükle</b> ile aktarılır.
     </p>
     <div id="exp-stats" style="margin-bottom:14px"></div>
@@ -1227,7 +1227,7 @@ function exportJSON() {
   const blob = new Blob([JSON.stringify(payload,null,2)], { type:'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `saha_crm_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `toplanti_asistan_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   // Ö2: Son export tarihini kaydet
   localStorage.setItem('ta_son_export', new Date().toISOString());
